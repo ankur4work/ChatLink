@@ -1,5 +1,5 @@
 {
-  "name": "mx-whatsapp-chat-button",
+  "name": "zapchat-whatsapp-button",
   "version": "1.0.0",
   "main": "web/index.js",
   "license": "UNLICENSED",
@@ -15,9 +15,7 @@
     "@shopify/app": "^3.58.2",
     "@shopify/cli": "^3.84.1",
     "@shopify/ui-extensions": "2023.10.0",
-    "dotenv": "^8.2.0",
-    "react-syntax-highlighter": "^15.6.1",
-    "sqlite3": "^5.1.7"
+    "dotenv": "^8.2.0"
   },
-  "author": "Shivam Merothiya"
+  "author": "ZapChat"
 }

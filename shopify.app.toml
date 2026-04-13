@@ -3,12 +3,12 @@
 client_id = "bfb95502aa8f4f718b14d09136fef838"
 application_url = "https://qui-diffs-hewlett-todd.trycloudflare.com"
 embedded = true
-name = "Staging"
+name = "ZapChat"
 handle = "staging-76"
 
 [build]
 automatically_update_urls_on_dev = true
-dev_store_url = "shivam-development-store.myshopify.com"
+dev_store_url = ""
 
 [webhooks]
 api_version = "2022-10"

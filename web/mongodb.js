@@ -1,8 +1,11 @@
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
 
-const uri = "mongodb+srv://meroxio:%40%23MeroxIO%23%40@cluster0.xcu2ogt.mongodb.net/?retryWrites=true&w=majority"; // Update with your connection string
-const dbName = "mx-whatsapp-chat-button"; // Name of your database
-const collectionName = "shopify_sessions"; // Collection to store sessions
+dotenv.config();
+
+const uri = process.env.MONGODB_URL || "mongodb://localhost:27017";
+const dbName = process.env.MONGODB_DB_NAME || "zapchat_app";
+const collectionName = "shopify_sessions";
 
 let client;
 

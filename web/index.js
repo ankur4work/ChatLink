@@ -5,520 +5,455 @@ import express from "express";
 import serveStatic from "serve-static";
 
 import shopify from "./shopify.js";
-import productCreator from "./product-creator.js";
 import cancelSubscription from "./cancel-subscription.js";
 import GDPRWebhookHandlers from "./gdpr.js";
-import crypto from "crypto";
 import dotenv from "dotenv";
 
-
-import createDbConnection  from './analytics-db.js'; // Database initialization
-import { connectToMongoDB } from "./mongodb.js"; // Import the MongoDB utility
+import { connectToMongoDB } from "./mongodb.js";
 
 dotenv.config();
 
-const PORT = parseInt(
-  process.env.BACKEND_PORT || process.env.PORT || "3000",
-  10
-);
+/* ------------------------------------------------ */
+/*                    CONFIG                         */
+/* ------------------------------------------------ */
+
+const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || "3000", 10);
 
 const STATIC_PATH =
   process.env.NODE_ENV === "production"
     ? `${process.cwd()}/frontend/dist`
     : `${process.cwd()}/frontend/`;
 
+const PREMIUM_PLAN = "Premium";
+
+const APP_NAMESPACE = "custom";
+const SHOP_METAFIELD_KEY = "zapchat-whatsapp-button";
+const APP_INSTALL_METAFIELD_KEY = "zapchat-whatsapp-button-premium";
+
+const IS_TEST = true;
+
+const APP_NAME = "zapchat-whatsapp-button";
+
+const HTTP_STATUS = {
+  OK: 200,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  INTERNAL_SERVER_ERROR: 500,
+};
+
+/* ------------------------------------------------ */
+/*                EXPRESS APP INIT                   */
+/* ------------------------------------------------ */
+
 const app = express();
 
-// Set up Shopify authentication and webhook handling
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+/* ------------------------------------------------ */
+/*             SHOPIFY AUTH & WEBHOOKS               */
+/* ------------------------------------------------ */
+
 app.get(shopify.config.auth.path, shopify.auth.begin());
+
 app.get(
   shopify.config.auth.callbackPath,
   shopify.auth.callback(),
   shopify.redirectToShopifyOrAppRoot()
 );
+
 app.post(
   shopify.config.webhooks.path,
-  shopify.processWebhooks({ webhookHandlers: GDPRWebhookHandlers })
+  shopify.processWebhooks({ webhookHandlers: {} })
 );
 
-// If you are adding routes outside of the /api path, remember to
-// also add a proxy rule for them in web/frontend/vite.config.js
+/* ------------------------------------------------ */
+/*                   UTILITIES                       */
+/* ------------------------------------------------ */
 
+const getSession = (res) => res.locals.shopify.session;
 
-const PREMIUM_PLAN = "Basic";       // your “paid/basic” plan
+const createGraphQLClient = (session) =>
+  new shopify.api.clients.Graphql({ session });
 
-const Custom_app = "custom";
-const APP_NAMESPACE = "custom";
-const WHATSAPP_MEATFILED_KEY = "mx-whatsapp-chat-button"; 
-const PREMIUM_PLAN_KEY = "mx-whatsapp-chat-button-premium";
-const IS_TEST = true;
-const APP_NAME = "mx-whatsapp-chat-button";
-const HTTP_STATUS = { OK: 200, BAD_REQUEST: 400, UNAUTHORIZED: 401, INTERNAL_SERVER_ERROR: 500 };
+const handleError = (res, code, message) => {
+  console.error(message);
+  res.status(code).send({ error: message });
+};
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Handles URL-encoded data
+/* ------------------------------------------------ */
+/*                BILLING SERVICE                    */
+/* ------------------------------------------------ */
 
+// Direct GraphQL helper — bypasses the library
+async function shopifyGraphQL(session, query, variables = {}) {
+  const res = await fetch(
+    `https://${session.shop}/admin/api/2026-04/graphql.json`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": session.accessToken,
+      },
+      body: JSON.stringify({ query, variables }),
+    }
+  );
+  const json = await res.json();
+  if (!res.ok) throw new Error(`GraphQL ${res.status}: ${JSON.stringify(json)}`);
+  return json;
+}
+
+const BillingService = {
+  async check(session) {
+    const { data } = await shopifyGraphQL(session, `{
+      currentAppInstallation {
+        activeSubscriptions {
+          name
+          status
+        }
+      }
+    }`);
+    const subs = data?.currentAppInstallation?.activeSubscriptions || [];
+    return subs.some(s => s.status === "ACTIVE" && s.name === PREMIUM_PLAN);
+  },
+
+  async request(session) {
+    const { data } = await shopifyGraphQL(session, `
+      mutation appSubscriptionCreate($name: String!, $returnUrl: URL!, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!) {
+        appSubscriptionCreate(name: $name, returnUrl: $returnUrl, test: $test, lineItems: $lineItems) {
+          appSubscription { id }
+          confirmationUrl
+          userErrors { field message }
+        }
+      }
+    `, {
+      name: PREMIUM_PLAN,
+      returnUrl: `https://${session.shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`,
+      test: IS_TEST,
+      lineItems: [{
+        plan: {
+          appRecurringPricingDetails: {
+            price: { amount: 100.0, currencyCode: "USD" },
+            interval: "EVERY_30_DAYS",
+          },
+        },
+      }],
+    });
+    const result = data?.appSubscriptionCreate;
+    if (result?.userErrors?.length) {
+      throw new Error(result.userErrors.map(e => e.message).join(", "));
+    }
+    return result?.confirmationUrl;
+  },
+
+  async cancel(session) {
+    return await cancelSubscription(session);
+  },
+};
+
+/* ------------------------------------------------ */
+/*             SUBSCRIPTION SERVICE                  */
+/* ------------------------------------------------ */
+
+const SubscriptionService = {
+  async getPlanTier(session) {
+    try {
+      const active = await BillingService.check(session);
+      return active ? "premium" : "free";
+    } catch (err) {
+      console.error("Subscription check failed:", err);
+      return "free";
+    }
+  },
+};
+
+/* ------------------------------------------------ */
+/*                METAFIELD SERVICE                  */
+/* ------------------------------------------------ */
+
+const MetafieldService = {
+  async getShopGid(session) {
+    const { data } = await shopifyGraphQL(session, `{ shop { id } }`);
+    const shopId = data?.shop?.id;
+    if (!shopId) throw new Error("Shop ID not found");
+    return shopId;
+  },
+
+  async updateShopMetafield(session, tier) {
+    const ownerId = await this.getShopGid(session);
+    await shopifyGraphQL(session, CREATE_APP_DATA_METAFIELD, {
+      metafieldsSetInput: [{
+        ownerId,
+        namespace: APP_NAMESPACE,
+        key: SHOP_METAFIELD_KEY,
+        type: "single_line_text_field",
+        value: tier === "premium" ? "premium" : "free",
+      }],
+    });
+  },
+
+  async ensureAppMetafield(session) {
+    const { data } = await shopifyGraphQL(session, CURRENT_APP_INSTALLATION, {
+      namespace: APP_NAMESPACE,
+      key: APP_INSTALL_METAFIELD_KEY,
+    });
+    const ownerId = data?.currentAppInstallation?.id;
+    const existing = data?.currentAppInstallation?.metafield;
+    if (!existing && ownerId) {
+      await shopifyGraphQL(session, CREATE_APP_DATA_METAFIELD, {
+        metafieldsSetInput: [{
+          namespace: APP_NAMESPACE,
+          key: APP_INSTALL_METAFIELD_KEY,
+          type: "boolean",
+          value: "true",
+          ownerId,
+        }],
+      });
+    }
+  },
+
+  async deleteAppMetafield(session) {
+    const { data } = await shopifyGraphQL(session, CURRENT_APP_INSTALLATION, {
+      namespace: APP_NAMESPACE,
+      key: APP_INSTALL_METAFIELD_KEY,
+    });
+    const ownerId = data?.currentAppInstallation?.id;
+    const existing = data?.currentAppInstallation?.metafield;
+    if (ownerId && existing) {
+      await shopifyGraphQL(session, APP_OWNED_METAFIELD_DELETE, {
+        ownerId,
+        namespace: APP_NAMESPACE,
+        key: APP_INSTALL_METAFIELD_KEY,
+      });
+    }
+  },
+};
+
+/* ------------------------------------------------ */
+/*           PUBLIC SUBSCRIPTION CHECK               */
+/* ------------------------------------------------ */
 
 app.get("/api/scroll-to-top/hasSubscription", async (req, res) => {
   try {
     const { shop } = req.query;
 
     if (!shop) {
-      console.warn("Missing 'shop' parameter in request");
-      return res.status(400).send({ error: "Missing 'shop' parameter" });
+      return handleError(res, HTTP_STATUS.BAD_REQUEST, "Missing shop parameter");
     }
 
     const collection = await connectToMongoDB();
     const session = await collection.findOne({ shop });
 
     if (!session) {
-      console.warn(`No session found for shop: ${shop}`);
-      return res.status(401).send({ error: "Unauthorized: Session not found" });
+      return handleError(res, HTTP_STATUS.UNAUTHORIZED, "Session not found");
     }
 
-    const tier = await getPlanTier(session); // "free" | "premium"
+    const tier = await SubscriptionService.getPlanTier(session);
 
-    // Keep shop metafield in sync
-    await updateSubscriptionMetafield(session, tier);
-
-    return res.status(200).send({
-      hasActiveSubscription: tier !== "free",
-      tier, // free | premium
-    });
-  } catch (error) {
-    console.error("Error in hasSubscription:", error.message);
-    return res.status(500).send({ error: "Failed to fetch subscription" });
-  }
-});
-
-/* ---------------------- Subscription Utilities ---------------------- */
-
-/**
- * Returns current plan tier: "premium" or "free"
- */
-async function getPlanTier(session) {
-  try {
-    const hasPremium = await shopify.api.billing.check({
-      session,
-      plans: [PREMIUM_PLAN],
-      isTest: IS_TEST,
-    });
-
-    return hasPremium ? "premium" : "free";
-  } catch (error) {
-    console.error("Error checking plan tier:", error);
-    return "free";
-  }
-}
-
-/**
- * Get Shop GID (ownerId for shop metafields)
- */
-async function getShopGid(session) {
-  const client = new shopify.api.clients.Graphql({ session });
-
-  const SHOP_ID_QUERY = `
-    {
-      shop {
-        id
-      }
-    }
-  `;
-
-  const response = await client.request(SHOP_ID_QUERY);
-  const shopData = response?.shop ?? response?.data?.shop ?? response?.data;
-  const shopId = shopData?.id;
-
-  if (!shopId) {
-    console.error("❌ Could not get shop.id from GraphQL response:", response);
-    throw new Error("Shop ID not found");
-  }
-
-  return shopId;
-}
-
-/**
- * Update shop metafield "custom.trust-badges" to "premium" or "free".
- *
- * Liquid usage:
- *   {% assign plan = shop.metafields.custom["trust-badges"] %}
- *   {% if plan == "free" %}
- *     <!-- show watermark -->
- *   {% endif %}
- */
-async function updateSubscriptionMetafield(session, planTier) {
-  try {
-    const client = new shopify.api.clients.Graphql({ session });
-    const ownerId = await getShopGid(session);
-
-    const metafieldValue = planTier === "premium" ? "premium" : "free";
-
-    const result = await client.request(CREATE_APP_DATA_METAFIELD, {
-      variables: {
-        metafieldsSetInput: [
-          {
-            ownerId,
-            namespace: APP_NAMESPACE,
-            key: WHATSAPP_MEATFILED_KEY,
-            type: "single_line_text_field",
-            value: metafieldValue,
-          },
-        ],
-      },
-    });
-
-    const metafieldsSet =
-      result?.metafieldsSet ??
-      result?.data?.metafieldsSet ??
-      result?.body?.data?.metafieldsSet;
-
-    const userErrors = metafieldsSet?.userErrors || [];
-    if (userErrors.length) {
-      console.error("❌ Failed to set shop metafield:", userErrors);
-      return false;
-    }
-
-    console.log(
-      `✅ Shop metafield ${APP_NAMESPACE}.${WHATSAPP_MEATFILED_KEY} set to "${metafieldValue}" for ${session.shop}`
-    );
-    return true;
-  } catch (error) {
-    console.error("❌ Error in updateSubscriptionMetafield:", error);
-    return false;
-  }
-}
-
-/* ---------------------- Analytics Event Logging ---------------------- */
-
-app.use("/api/*", shopify.validateAuthenticatedSession());
-
-/* ---------------------- Utility Functions ---------------------- */
-const handleError = (res, statusCode, message) => {
-  console.error(message);
-  res.status(statusCode).send({ error: message });
-};
-
-async function storeShopDetails(shopDetails) {
-  try {
-    const response = await fetch(
-      "https://app.Custom_app.com/app-installation-data-store/storedata",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(shopDetails),
-      }
-    );
-    if (!response.ok) throw new Error("Network response was not ok.");
-  } catch (error) {
-    console.error("Failed to store shop details:", error.message);
-  }
-}
-
-const shopDetailsQuery = `
-{
-  shop {
-    name
-    email
-    primaryDomain { url host }
-    plan { displayName }
-  }
-}`;
-
-/* --------------------------- Subscription Routes -------------------------- */
-
-// Create / Switch Subscription
-app.get("/api/createSubscription", async (req, res) => {
-  try {
-    const session = res.locals.shopify.session;
-
-    // Even if ?plan=unlimited is passed, we ignore it now – only Basic exists
-    const planName = PREMIUM_PLAN;
-
-    const hasPayment = await shopify.api.billing.check({
-      session,
-      plans: [planName],
-      isTest: IS_TEST,
-    });
-
-    if (hasPayment) {
-      console.log(`✅ ${session.shop} already subscribed to ${planName}`);
-
-      // sync shop metafield to premium
-      await updateSubscriptionMetafield(session, "premium");
-
-      return res.status(200).send({ isActiveSubscription: true, plan: planName });
-    } else {
-      console.log(`➡️ ${session.shop} creating subscription for ${planName}`);
-
-      const redirectUrl = await shopify.api.billing.request({
-        session,
-        plan: planName,
-        isTest: IS_TEST,
-      });
-      res.status(200).send({
-        isActiveSubscription: false,
-        plan: planName,
-        confirmationUrl: redirectUrl,
-      });
-    }
-  } catch (error) {
-    console.error("❌ Failed to create subscription:", error);
-    res.status(500).send({ error: "Failed to create subscription" });
-  }
-});
-
-// Cancel Subscription
-app.get("/api/cancelSubscription", async (req, res) => {
-  try {
-    const session = res.locals.shopify.session;
-
-    const hasPremium = await shopify.api.billing.check({
-      session,
-      plans: [PREMIUM_PLAN],
-      isTest: IS_TEST,
-    });
-
-    if (hasPremium) {
-      const planToCancel = PREMIUM_PLAN;
-
-      const subscriptionStatus = await cancelSubscription(session);
-      console.log(
-        `✅ ${session.shop} subscription cancelled. Status: ${subscriptionStatus}`
-      );
-
-      // Remove app-owned metafield if present
-      const client = new shopify.api.clients.Graphql({ session });
-      const currentInstallations = await client.request(CURRENT_APP_INSTALLATION, {
-        variables: { namespace: Custom_app, key: PREMIUM_PLAN_KEY },
-      });
-
-      const installation = currentInstallations?.currentAppInstallation;
-      const ownerId = installation?.id;
-      const metafield = installation?.metafield;
-
-      if (ownerId && metafield) {
-        console.log(`🗑️ Removing appOwnedMetafield for shop: ${session.shop}`);
-        const deleteResp = await client.request(APP_OWNED_METAFIELD_DELETE, {
-          variables: { ownerId, namespace: Custom_app, key: PREMIUM_PLAN_KEY },
-        });
-
-        const delErrors =
-          deleteResp?.appOwnedMetafieldDelete?.userErrors || [];
-        if (delErrors.length) {
-          console.error("❌ Failed to delete metafield:", delErrors);
-        } else {
-          console.log(`✅ Metafield deleted successfully for shop: ${session.shop}`);
-        }
-      }
-
-      // Downgrade after cancel → set shop metafield to free
-      if (["CANCELLED", "ACTIVE_CANCELLED"].includes(subscriptionStatus)) {
-        await updateSubscriptionMetafield(session, "free");
-      }
-
-      return res
-        .status(200)
-        .send({ status: subscriptionStatus, cancelledPlan: planToCancel });
-    }
-
-    // No subscription – still ensure shop metafield is free
-    await updateSubscriptionMetafield(res.locals.shopify.session, "free");
-
-    res.status(200).send({ status: "No subscription found" });
-  } catch (error) {
-    console.error("❌ Failed to cancel subscription:", error);
-    res.status(500).send({ error: "Failed to cancel subscription" });
-  }
-});
-
-// Check Active Subscription + ensure premium metafield
-app.get("/api/hasActiveSubscription", async (_req, res) => {
-  try {
-    const session = res.locals.shopify.session;
-    const tier = await getPlanTier(session);
-    const hasActive = tier !== "free";
-
-    if (!hasActive) {
-      // sync both metafields to free
-      await updateSubscriptionMetafield(session, "free");
-      return res.status(200).send({ hasActiveSubscription: false });
-    }
-
-    // Ensure app-owned metafield exists
-    const client = new shopify.api.clients.Graphql({ session });
-    const currentInstallations = await client.request(CURRENT_APP_INSTALLATION, {
-      variables: { namespace: Custom_app, key: PREMIUM_PLAN_KEY },
-    });
-
-    const installation = currentInstallations?.currentAppInstallation;
-    const ownerId = installation?.id;
-    const existing = installation?.metafield;
-
-    if (!existing && ownerId) {
-      console.log(`🆕 Creating app-owned metafield for paid plan on shop: ${session.shop}`);
-      const createResp = await client.request(CREATE_APP_DATA_METAFIELD, {
-        variables: {
-          metafieldsSetInput: [
-            {
-              namespace: Custom_app,
-              key: PREMIUM_PLAN_KEY,
-              type: "boolean",
-              value: "true",
-              ownerId,
-            },
-          ],
-        },
-      });
-
-      const createErrors = createResp?.metafieldsSet?.userErrors || [];
-      if (createErrors.length) {
-        console.error("❌ Failed to add metafield:", createErrors);
-      } else {
-        console.log(`✅ Metafield created for shop: ${session.shop}`);
-      }
-    }
-
-    // Sync shop metafield (custom.trust-badges) with tier
-    await updateSubscriptionMetafield(session, tier);
-
-    res.status(200).send({ hasActiveSubscription: true, tier });
-  } catch (error) {
-    console.error("❌ Failed to fetch subscription:", error);
-    res.status(500).send({ error: "Failed to fetch subscription" });
-  }
-});
-
-/* --------------------------- Helper for Plan Info --------------------------- */
-function getOrderLimit(planTier) {
-  switch (planTier) {
-    case "premium":
-      return 1000;
-    default:
-      return 100; // free tier
-  }
-}
-
-async function getStoreId(session) {
-  return session.shop || "unknown_store";
-}
-
-async function getCurrentOrderCount(storeId) {
-  return 0; // replace with real count if needed
-}
-
-app.get("/api/scroll-to-top/plan-info", async (_req, res) => {
-  try {
-    const session = res.locals.shopify.session;
-    const storeId = await getStoreId(session);
-
-    const planTier = await getPlanTier(session);
-    const orderLimit = getOrderLimit(planTier);
-    const currentCount = await getCurrentOrderCount(storeId);
-    const remaining = Math.max(0, orderLimit - currentCount);
-
-    res.status(200).json({
-      planTier,
-      orderLimit,
-      currentCount,
-      remaining,
-      canImportMore: remaining > 0,
-    });
-  } catch (error) {
-    console.error("Failed to get plan info:", error);
-    res.status(500).json({ error: "Failed to get plan information" });
-  }
-});
-
-/* --------------------------- Misc APIs --------------------------- */
-app.get("/api/getshop", async (req, res) => {
-  try {
-    const session = res.locals.shopify.session;
-    const shopName = session ? session.shop : "Shop name not found";
-    res.json({ shop: shopName });
-  } catch (err) {
-    console.error("Error fetching shop:", err);
-    res.status(500).json({ error: "Failed to fetch shop" });
-  }
-});
-
-app.get("/api/store-details", async (_req, res) => {
-  const session = res.locals.shopify.session;
-  if (!session)
-    return handleError(res, HTTP_STATUS.UNAUTHORIZED, "No active session found.");
-  try {
-    const client = new shopify.api.clients.Graphql({ session });
-    const response = await client.request(shopDetailsQuery);
-    const shopData = (response?.shop ?? response?.data?.shop ?? response?.data) || {};
-    const { name, email, primaryDomain, plan } = shopData;
-
-    await storeShopDetails({
-      appName: APP_NAME,
-      storeUrl: primaryDomain?.url,
-      name,
-      email,
-      plan: plan?.displayName,
-    });
+    await MetafieldService.updateShopMetafield(session, tier);
 
     res.status(HTTP_STATUS.OK).send({
-      message: "Shop details fetched successfully",
-      data: { name, email, primaryDomain, plan },
+      hasActiveSubscription: tier !== "free",
+      tier,
     });
-  } catch (error) {
-    handleError(
-      res,
-      HTTP_STATUS.INTERNAL_SERVER_ERROR,
-      `Failed to fetch store details: ${error.message}`
-    );
+  } catch (err) {
+    handleError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
   }
 });
 
-/* --------------------------- Serve Frontend --------------------------- */
+/* ------------------------------------------------ */
+/*            PROTECTED ROUTES (AUTH)                */
+/* ------------------------------------------------ */
+
+app.use("/api", shopify.validateAuthenticatedSession());
+
+/* ------------------------------------------------ */
+/*           CREATE SUBSCRIPTION ROUTE               */
+/* ------------------------------------------------ */
+
+app.get("/api/createSubscription", async (req, res) => {
+  try {
+    const session = getSession(res);
+
+    // Check if already subscribed
+    let active = false;
+    try {
+      active = await BillingService.check(session);
+    } catch (e) {
+      console.warn("Billing check failed, assuming no subscription:", e.message);
+    }
+
+    if (active) {
+      try { await MetafieldService.updateShopMetafield(session, "premium"); } catch (e) {}
+      return res.send({ isActiveSubscription: true, plan: PREMIUM_PLAN });
+    }
+
+    // Request new subscription
+    const confirmationUrl = await BillingService.request(session);
+    console.log("Billing confirmation URL:", confirmationUrl);
+
+    res.send({
+      isActiveSubscription: false,
+      plan: PREMIUM_PLAN,
+      confirmationUrl,
+    });
+  } catch (err) {
+    console.error("Create subscription error:", err.message);
+    handleError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
+  }
+});
+
+/* ------------------------------------------------ */
+/*             CANCEL SUBSCRIPTION ROUTE             */
+/* ------------------------------------------------ */
+
+app.get("/api/cancelSubscription", async (req, res) => {
+  try {
+    const session = getSession(res);
+
+    const active = await BillingService.check(session);
+
+    if (!active) {
+      return res.send({ status: "No subscription found" });
+    }
+
+    const status = await BillingService.cancel(session);
+
+    await MetafieldService.deleteAppMetafield(session);
+    await MetafieldService.updateShopMetafield(session, "free");
+
+    res.send({
+      status,
+      cancelledPlan: PREMIUM_PLAN,
+    });
+  } catch (err) {
+    handleError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
+  }
+});
+
+/* ------------------------------------------------ */
+/*           CHECK ACTIVE SUBSCRIPTION               */
+/* ------------------------------------------------ */
+
+app.get("/api/hasActiveSubscription", async (req, res) => {
+  try {
+    const session = getSession(res);
+    const tier = await SubscriptionService.getPlanTier(session);
+
+    // Try to update metafields but don't fail if it errors
+    try {
+      if (tier === "premium") {
+        await MetafieldService.ensureAppMetafield(session);
+      }
+      await MetafieldService.updateShopMetafield(session, tier);
+    } catch (e) {
+      console.warn("Metafield update skipped:", e.message);
+    }
+
+    res.send({
+      hasActiveSubscription: tier === "premium",
+      tier,
+    });
+  } catch (err) {
+    // Return free plan as safe default instead of crashing
+    res.send({ hasActiveSubscription: false, tier: "free" });
+  }
+});
+
+/* ------------------------------------------------ */
+/*                 SHOP INFO ROUTE                   */
+/* ------------------------------------------------ */
+
+app.get("/api/getshop", (req, res) => {
+  const session = getSession(res);
+  res.json({ shop: session?.shop || null });
+});
+
+// Debug: check what the token actually has
+app.get("/api/debug-session", async (req, res) => {
+  const session = getSession(res);
+  const token = session?.accessToken || "none";
+  const maskedToken = token.length > 8 ? token.slice(0, 4) + "..." + token.slice(-4) : token;
+
+  // Try a direct fetch to Shopify GraphQL
+  let apiResult = "not tested";
+  try {
+    const response = await fetch(
+      `https://${session.shop}/admin/api/2026-04/graphql.json`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": session.accessToken,
+        },
+        body: JSON.stringify({ query: "{ shop { name } }" }),
+      }
+    );
+    apiResult = { status: response.status, body: await response.text() };
+  } catch (e) {
+    apiResult = { error: e.message };
+  }
+
+  res.json({
+    shop: session?.shop,
+    scope: session?.scope,
+    token: maskedToken,
+    isOnline: session?.isOnline,
+    apiResult,
+  });
+});
+
+/* ------------------------------------------------ */
+/*              FRONTEND SERVING                     */
+/* ------------------------------------------------ */
+
 app.use(shopify.cspHeaders());
+
 app.use(serveStatic(STATIC_PATH, { index: false }));
-app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res) => {
-  return res
+
+app.use("/", shopify.ensureInstalledOnShop(), async (_req, res) => {
+  res
     .status(200)
     .set("Content-Type", "text/html")
     .send(readFileSync(join(STATIC_PATH, "index.html")));
 });
 
 app.listen(PORT, () =>
-  console.log(`🚀 Server running  on http://localhost:${PORT}`)
+  console.log(`🚀 Server running on http://localhost:${PORT}`)
 );
 
-/* --------------------------- GraphQL Queries --------------------------- */
+/* ------------------------------------------------ */
+/*                   GRAPHQL                         */
+/* ------------------------------------------------ */
 
-// Read app-owned metafield on the app installation
 const CURRENT_APP_INSTALLATION = `
-  query appSubscription($namespace: String!, $key: String!) {
-    currentAppInstallation {
+query appSubscription($namespace: String!, $key: String!) {
+  currentAppInstallation {
+    id
+    metafield(namespace: $namespace, key: $key) {
+      namespace
+      key
+      value
       id
-      metafield(namespace: $namespace, key: $key) {
-        namespace
-        key
-        value
-        id
-      }
     }
   }
+}
 `;
 
-// Create/Update metafields (both app-owned + shop metafields)
 const CREATE_APP_DATA_METAFIELD = `
-  mutation CreateAppDataMetafield($metafieldsSetInput: [MetafieldsSetInput!]!) {
-    metafieldsSet(metafields: $metafieldsSetInput) {
-      metafields { id namespace key }
-      userErrors { field message }
-    }
+mutation CreateAppDataMetafield($metafieldsSetInput: [MetafieldsSetInput!]!) {
+  metafieldsSet(metafields: $metafieldsSetInput) {
+    metafields { id namespace key }
+    userErrors { field message }
   }
+}
 `;
 
-// Delete app-owned metafield (correct for app-owned metafields)
 const APP_OWNED_METAFIELD_DELETE = `
-  mutation appOwnedMetafieldDelete($ownerId: ID!, $namespace: String!, $key: String!) {
-    appOwnedMetafieldDelete(ownerId: $ownerId, namespace: $namespace, key: $key) {
-      deletedId
-      userErrors { field message }
-    }
+mutation appOwnedMetafieldDelete($ownerId: ID!, $namespace: String!, $key: String!) {
+  appOwnedMetafieldDelete(ownerId: $ownerId, namespace: $namespace, key: $key) {
+    deletedId
+    userErrors { field message }
   }
+}
 `;

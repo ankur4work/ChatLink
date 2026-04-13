@@ -215,7 +215,7 @@ table.Polaris-DataTable__Table thead th {
 
 .meta-card-data-wrapper:hover .meta-card-hovered-data {
     visibility: visible;
-    background-color: #24ade3;
+    background-color: #6366F1;
     color: var(--p-text-on-critical);
 
     height: 100px;
@@ -432,7 +432,6 @@ table.Polaris-DataTable__Table thead th {
 }
 
 .container .Polaris-CalloutCard__Image {
-
     width: 25%;
 }
 
@@ -449,6 +448,17 @@ table.Polaris-DataTable__Table thead th {
     position: relative;
     bottom: 30px;
     line-height: 26px;
+}
+
+/* ZapChat brand overrides */
+.Polaris-Button--primary {
+    background: #6366F1 !important;
+    border-color: #6366F1 !important;
+}
+
+.Polaris-Button--primary:hover {
+    background: #4F46E5 !important;
+    border-color: #4F46E5 !important;
 }
 
 /*m-mediacard-container */
@@ -476,7 +486,7 @@ table.Polaris-DataTable__Table thead th {
     font-size: 22px;
 }
 
-.container.merox-reviews-part h2 {
+.container.zapchat-reviews-part h2 {
     display: inline-block;
     margin-bottom: 1rem;
     font-size: 22px;
