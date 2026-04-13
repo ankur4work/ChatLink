@@ -64,7 +64,7 @@ app.get(
 
 app.post(
   shopify.config.webhooks.path,
-  shopify.processWebhooks({ webhookHandlers: {} })
+  shopify.processWebhooks({ webhookHandlers: GDPRWebhookHandlers })
 );
 
 /* ------------------------------------------------ */

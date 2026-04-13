@@ -2,7 +2,7 @@
 
 client_id = "a1eb64553cc7c9eca0b3afe35a88de4f"
 name = "zapchat"
-application_url = "https://example.com"
+application_url = "https://zapchat.solnix.store"
 embedded = true
 
 [build]
@@ -16,4 +16,9 @@ api_version = "2026-07"
 scopes = "read_products,read_themes"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://zapchat.solnix.store/api/auth/callback" ]
+
+[webhooks.privacy_compliance]
+customer_deletion_url = "https://zapchat.solnix.store/api/webhooks"
+customer_data_request_url = "https://zapchat.solnix.store/api/webhooks"
+shop_deletion_url = "https://zapchat.solnix.store/api/webhooks"
