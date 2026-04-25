@@ -11,11 +11,15 @@ import {
 } from "@shopify/polaris";
 import { useAuthenticatedFetch } from "../hooks";
 
+// Shopify-assigned app handle from the Partner Dashboard URL
+// (e.g. /store/.../apps/chatlink-2). If the handle changes, update here.
+const APP_HANDLE = "chatlink-2";
+
 export default function Pricing() {
   const fetchAuth = useAuthenticatedFetch();
 
   const [plan, setPlan] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const [banner, setBanner] = useState(null);
 
   const PRICE = "100";
@@ -33,27 +37,23 @@ export default function Pricing() {
 
   useEffect(() => { loadPlan(); }, []);
 
-  const changePlan = async (target) => {
-    if (target === plan) return;
+  const goToManagedPricing = async () => {
     try {
-      setActionLoading(target);
-      if (target === "free") {
-        await fetchAuth("/api/cancelSubscription");
-        await loadPlan();
-        setBanner({ status: "success", msg: "Free plan activated" });
-        return;
-      }
-      const res = await fetchAuth(`/api/createSubscription?plan=premium`);
+      setActionLoading(true);
+      const res = await fetchAuth("/api/getshop");
       const data = await res.json();
-      if (data.confirmationUrl) {
-        if (window.top) {
-          window.top.location.href = data.confirmationUrl;
-        } else {
-          window.location.href = data.confirmationUrl;
-        }
+      if (!data?.shop) throw new Error("Could not determine shop");
+      const shopHandle = data.shop.replace(".myshopify.com", "");
+      const url = `https://admin.shopify.com/store/${shopHandle}/charges/${APP_HANDLE}/pricing_plans`;
+      if (window.top) {
+        window.top.location.href = url;
+      } else {
+        window.location.href = url;
       }
-    } finally {
-      setActionLoading(null);
+    } catch (err) {
+      console.error("goToManagedPricing failed:", err);
+      setActionLoading(false);
+      setBanner({ status: "critical", msg: "Could not open billing page. Try again." });
     }
   };
 
@@ -207,37 +207,27 @@ export default function Pricing() {
               </div>
             ))}
 
-            {/* ACTION ROW */}
+            {/* ACTION ROW — single Manage Plan button (Shopify Managed Pricing) */}
             <div style={{
-              display: "grid",
-              gridTemplateColumns: "1.6fr 1fr 1fr",
+              padding: "16px 22px",
               borderTop: "1px solid #E5E7EB",
               background: "#FAFAFA",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              flexWrap: "wrap",
             }}>
-              <div style={{ padding: "16px 22px", fontSize: 12, color: "#6B7280", display: "flex", alignItems: "center" }}>
-                30-day money-back guarantee
+              <div style={{ fontSize: 12, color: "#6B7280" }}>
+                Plans are managed through Shopify. Click below to view, switch, or cancel.
               </div>
-              <div style={{ padding: "14px 14px", borderLeft: "1px solid #E5E7EB" }}>
-                <Button
-                  fullWidth
-                  disabled={isCurrent("free")}
-                  loading={actionLoading === "free"}
-                  onClick={() => changePlan("free")}
-                >
-                  {isCurrent("free") ? "Current" : "Downgrade"}
-                </Button>
-              </div>
-              <div style={{ padding: "14px 14px", borderLeft: "1px solid #E5E7EB" }}>
-                <Button
-                  fullWidth
-                  primary
-                  disabled={isCurrent("premium")}
-                  loading={actionLoading === "premium"}
-                  onClick={() => changePlan("premium")}
-                >
-                  {isCurrent("premium") ? "Current" : `Upgrade $${PRICE}/mo`}
-                </Button>
-              </div>
+              <Button
+                primary
+                loading={actionLoading}
+                onClick={goToManagedPricing}
+              >
+                {isCurrent("premium") ? "Manage plan" : `Upgrade — $${PRICE}/mo`}
+              </Button>
             </div>
           </div>
         </Layout.Section>
