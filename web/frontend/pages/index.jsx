@@ -36,13 +36,16 @@ export default function HomePage() {
     try {
       const response = await fetch("/api/getshop");
       const data = await response.json();
-      const APP_ID = "YOUR_APP_ID";
-      const BLOCK_HANDLE = "whatsapp-chat-button";
+      if (!data?.shop) {
+        setActivateError("Could not determine shop URL.");
+        return;
+      }
       window.open(
-        `https://${data.shop}/admin/themes/current/editor?context=apps&activateAppId=${APP_ID}/${BLOCK_HANDLE}`,
+        `https://${data.shop}/admin/themes/current/editor?context=apps`,
         "_blank"
       );
-    } catch {
+    } catch (err) {
+      console.error("openThemeEditor failed:", err);
       setActivateError("Failed to open theme editor.");
     }
   };
