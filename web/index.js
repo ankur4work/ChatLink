@@ -379,7 +379,10 @@ app.use(shopify.cspHeaders());
 
 app.use(serveStatic(STATIC_PATH, { index: false }));
 
-app.use("/", shopify.ensureInstalledOnShop(), async (_req, res) => {
+// Serve the React app for every non-API path. Token-exchange auth happens
+// inside the iframe via App Bridge — the backend should not redirect uninstalled
+// shops to the legacy /api/auth flow (which returns 410 Gone in shopify-app-express v7+).
+app.use("/", async (_req, res) => {
   res
     .status(200)
     .set("Content-Type", "text/html")
