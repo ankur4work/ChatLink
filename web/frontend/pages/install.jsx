@@ -32,7 +32,7 @@ export default function Installation() {
         height: 4,
         width: 64,
         borderRadius: 999,
-        background: "linear-gradient(90deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%)",
+        background: "linear-gradient(90deg, #0084FF 0%, #00D4FF 50%, #A78BFA 100%)",
         marginBottom: 14,
       }}
     />
@@ -45,7 +45,7 @@ export default function Installation() {
     width: 32,
     height: 32,
     borderRadius: "50%",
-    background: "#6366F1",
+    background: "#0084FF",
     color: "#fff",
     fontWeight: 700,
     fontSize: 15,
@@ -71,7 +71,7 @@ export default function Installation() {
           {/* Header */}
           <Layout.Section>
             <div style={{
-              background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+              background: "linear-gradient(135deg, #0084FF 0%, #00D4FF 100%)",
               borderRadius: 20,
               padding: "32px 28px",
               color: "#fff",
@@ -81,7 +81,7 @@ export default function Installation() {
                 Installation Guide
               </h1>
               <p style={{ margin: 0, fontSize: 15, opacity: 0.9 }}>
-                Get ZapChat running on your store in under 2 minutes.
+                Get ChatLink running on your store in under 2 minutes.
               </p>
             </div>
           </Layout.Section>
@@ -90,7 +90,7 @@ export default function Installation() {
           <Layout.Section>
             <div style={sectionStyle}>
               {accentBar}
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1E1B4B", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#002B5C", marginBottom: 20 }}>
                 Theme Editor Setup
               </h2>
 
@@ -100,8 +100,8 @@ export default function Installation() {
                   desc: "Go to your Shopify admin \u2192 Online Store \u2192 Themes \u2192 Customize. Or click the button on the dashboard.",
                 },
                 {
-                  title: "Add the ZapChat Block",
-                  desc: "In the theme editor, click Add block \u2192 Apps \u2192 ZapChat WhatsApp Button.",
+                  title: "Add the ChatLink Block",
+                  desc: "In the theme editor, click Add block \u2192 Apps \u2192 ChatLink WhatsApp Button.",
                 },
                 {
                   title: "Configure Your Number",
@@ -135,7 +135,7 @@ export default function Installation() {
           <Layout.Section>
             <div style={sectionStyle}>
               {accentBar}
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1E1B4B", marginBottom: 14 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: "#002B5C", marginBottom: 14 }}>
                 Premium Page Visibility
               </h2>
               <p style={{ color: "#6B7280", fontSize: 14, marginBottom: 16, lineHeight: 1.6 }}>

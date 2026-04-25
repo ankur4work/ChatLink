@@ -13,7 +13,7 @@ function getSessionStorage() {
     console.log("Using MongoDB session storage");
     return new MongoDBSessionStorage(
       mongoUrl,
-      process.env.MONGODB_DB_NAME || "zapchat_app"
+      process.env.MONGODB_DB_NAME || "chatlink_app"
     );
   }
 

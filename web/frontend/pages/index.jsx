@@ -51,7 +51,7 @@ export default function HomePage() {
 
   const steps = [
     "Open Theme Editor from above.",
-    "Add block \u2192 Apps \u2192 ZapChat.",
+    "Add block \u2192 Apps \u2192 ChatLink.",
     "Enter your WhatsApp number.",
     "Customize style & position.",
     "Save \u2014 you\u2019re live!",
@@ -64,7 +64,7 @@ export default function HomePage() {
         {/* HERO */}
         <Layout.Section>
           <div style={{
-            background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
+            background: "linear-gradient(135deg, #0084FF, #00D4FF)",
             borderRadius: 8,
             padding: "20px 22px",
             color: "#fff",
@@ -74,7 +74,7 @@ export default function HomePage() {
                 <path fill="#fff" d="M19.11 17.21c-.27-.14-1.58-.78-1.82-.87-.24-.09-.41-.14-.59.14-.17.27-.68.87-.83 1.05-.15.17-.3.2-.56.07-.27-.14-1.13-.42-2.15-1.33-.79-.7-1.33-1.56-1.48-1.82-.15-.27-.02-.41.11-.55.12-.12.27-.3.41-.45.14-.15.18-.27.27-.45.09-.17.05-.33-.02-.47-.07-.14-.59-1.42-.81-1.95-.21-.5-.42-.43-.59-.44h-.5c-.17 0-.45.06-.68.33-.24.27-.89.87-.89 2.11 0 1.24.91 2.44 1.03 2.61.12.17 1.78 2.71 4.31 3.8.6.26 1.07.41 1.44.53.61.19 1.17.16 1.61.1.49-.07 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.07-.11-.24-.17-.5-.3z"/>
                 <path fill="#fff" d="M16 3C9.38 3 4 8.38 4 15c0 2.1.55 4.08 1.5 5.79L4 29l8.4-1.47A11.94 11.94 0 0016 27c6.62 0 12-5.38 12-12S22.62 3 16 3z"/>
               </svg>
-              <span style={{ fontSize: 18, fontWeight: 700 }}>ZapChat</span>
+              <span style={{ fontSize: 18, fontWeight: 700 }}>ChatLink</span>
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.5, margin: 0, opacity: 0.9 }}>
               Add a floating WhatsApp button to your store. Let customers contact you instantly.
@@ -88,7 +88,7 @@ export default function HomePage() {
         {/* PLAN + SETUP — same structure for equal height */}
         <Layout.Section oneHalf>
           <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", marginBottom: 12 }}>Your Plan</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 12 }}>Your Plan</div>
             {isPlanLoading ? (
               <SkeletonBodyText lines={3} />
             ) : (
@@ -101,7 +101,7 @@ export default function HomePage() {
                   fontWeight: 600,
                   color: "#fff",
                   background: currentPlan === "premium"
-                    ? "linear-gradient(90deg, #6366F1, #8B5CF6)"
+                    ? "linear-gradient(90deg, #0084FF, #00D4FF)"
                     : "#9CA3AF",
                 }}>
                   {currentPlan === "premium" ? "Premium" : "Free"}
@@ -121,13 +121,13 @@ export default function HomePage() {
 
         <Layout.Section oneHalf>
           <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", marginBottom: 12 }}>Quick Setup</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 12 }}>Quick Setup</div>
             <Stack vertical spacing="tight">
               {steps.map((step, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{
                     width: 18, height: 18, borderRadius: "50%",
-                    background: "#6366F1", color: "#fff",
+                    background: "#0084FF", color: "#fff",
                     fontSize: 10, fontWeight: 700,
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
@@ -142,22 +142,22 @@ export default function HomePage() {
         {/* HOW IT WORKS */}
         <Layout.Section>
           <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", marginBottom: 14 }}>How It Works</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 14 }}>How It Works</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
               {[
-                { title: "Install", desc: "Add the ZapChat block to your theme via the Shopify theme editor." },
+                { title: "Install", desc: "Add the ChatLink block to your theme via the Shopify theme editor." },
                 { title: "Configure", desc: "Set your WhatsApp number, choose icon style, color, and position." },
                 { title: "Go Live", desc: "Customers see the floating button and can message you with one tap." },
               ].map((item, i) => (
                 <div key={i}>
                   <div style={{
                     width: 26, height: 26, borderRadius: "50%",
-                    background: "#EEF2FF", color: "#6366F1",
+                    background: "#EEF2FF", color: "#0084FF",
                     fontSize: 13, fontWeight: 700,
                     display: "flex", alignItems: "center", justifyContent: "center",
                     marginBottom: 6,
                   }}>{i + 1}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1E1B4B", marginBottom: 3 }}>{item.title}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#002B5C", marginBottom: 3 }}>{item.title}</div>
                   <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>{item.desc}</div>
                 </div>
               ))}
@@ -168,7 +168,7 @@ export default function HomePage() {
         {/* TIPS */}
         <Layout.Section>
           <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#1E1B4B", marginBottom: 10 }}>Tips</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 10 }}>Tips</div>
             <Stack vertical spacing="tight">
               {[
                 "Use your country code with the phone number (e.g. 91 for India, 1 for US).",
@@ -178,7 +178,7 @@ export default function HomePage() {
                 "Upgrade to Premium to show on product and collection pages.",
               ].map((tip, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, fontSize: 13, color: "#374151" }}>
-                  <span style={{ color: "#6366F1", flexShrink: 0 }}>&bull;</span>
+                  <span style={{ color: "#0084FF", flexShrink: 0 }}>&bull;</span>
                   {tip}
                 </div>
               ))}

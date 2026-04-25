@@ -1,5 +1,5 @@
 .navbar {
-    background-color: #1E1B4B;
+    background-color: #002B5C;
     padding: 10px;
     display: flex;
     justify-content: center;
@@ -29,5 +29,5 @@
   }
 
   .tab-bar a:hover {
-    background-color: #6366F1;
+    background-color: #0084FF;
   }

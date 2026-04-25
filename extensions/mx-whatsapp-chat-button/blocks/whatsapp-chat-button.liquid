@@ -1,4 +1,4 @@
-{% assign plan = shop.metafields.custom["zapchat-whatsapp-button"] | default: 'free' %}
+{% assign plan = shop.metafields.custom["chatlink-whatsapp-button"] | default: 'free' %}
 {% assign template_name = template.name %}
 
 {% assign show_button = false %}
@@ -114,7 +114,7 @@
 {% endif %}
 {% schema %}
 {
-  "name": "ZapChat WhatsApp Button",
+  "name": "ChatLink WhatsApp Button",
   "target": "body",
   "settings": [
     {

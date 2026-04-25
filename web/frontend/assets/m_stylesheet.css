@@ -215,7 +215,7 @@ table.Polaris-DataTable__Table thead th {
 
 .meta-card-data-wrapper:hover .meta-card-hovered-data {
     visibility: visible;
-    background-color: #6366F1;
+    background-color: #0084FF;
     color: var(--p-text-on-critical);
 
     height: 100px;
@@ -450,15 +450,15 @@ table.Polaris-DataTable__Table thead th {
     line-height: 26px;
 }
 
-/* ZapChat brand overrides */
+/* ChatLink brand overrides */
 .Polaris-Button--primary {
-    background: #6366F1 !important;
-    border-color: #6366F1 !important;
+    background: #0084FF !important;
+    border-color: #0084FF !important;
 }
 
 .Polaris-Button--primary:hover {
-    background: #4F46E5 !important;
-    border-color: #4F46E5 !important;
+    background: #0066CC !important;
+    border-color: #0066CC !important;
 }
 
 /*m-mediacard-container */
@@ -486,7 +486,7 @@ table.Polaris-DataTable__Table thead th {
     font-size: 22px;
 }
 
-.container.zapchat-reviews-part h2 {
+.container.chatlink-reviews-part h2 {
     display: inline-block;
     margin-bottom: 1rem;
     font-size: 22px;

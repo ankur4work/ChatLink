@@ -3,7 +3,7 @@
 client_id = "bfb95502aa8f4f718b14d09136fef838"
 application_url = "https://qui-diffs-hewlett-todd.trycloudflare.com"
 embedded = true
-name = "ZapChat"
+name = "ChatLink"
 handle = "staging-76"
 
 [build]

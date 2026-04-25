@@ -93,10 +93,10 @@ export default function Pricing() {
         <Layout.Section oneHalf>
           <Card sectioned>
             <Stack alignment="center" distribution="equalSpacing">
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#1E1B4B" }}>Free</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#002B5C" }}>Free</span>
               {isCurrent("free") && <Badge status="info">Current</Badge>}
             </Stack>
-            <div style={{ fontSize: 32, fontWeight: 800, color: "#1E1B4B", margin: "6px 0 4px" }}>$0</div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: "#002B5C", margin: "6px 0 4px" }}>$0</div>
             <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12 }}>Homepage only</div>
 
             <R on>WhatsApp button on homepage</R>
@@ -117,14 +117,14 @@ export default function Pricing() {
         <Layout.Section oneHalf>
           <Card sectioned>
             <Stack alignment="center" distribution="equalSpacing">
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#1E1B4B" }}>Premium</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#002B5C" }}>Premium</span>
               {isCurrent("premium") ? (
                 <Badge status="success">Current</Badge>
               ) : (
-                <span style={{ fontSize: 10, fontWeight: 700, color: "#6366F1", background: "#EEF2FF", padding: "2px 8px", borderRadius: 999 }}>RECOMMENDED</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#0084FF", background: "#EEF2FF", padding: "2px 8px", borderRadius: 999 }}>RECOMMENDED</span>
               )}
             </Stack>
-            <div style={{ fontSize: 32, fontWeight: 800, color: "#1E1B4B", margin: "6px 0 4px" }}>${PRICE}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B7280" }}>/mo</span></div>
+            <div style={{ fontSize: 32, fontWeight: 800, color: "#002B5C", margin: "6px 0 4px" }}>${PRICE}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B7280" }}>/mo</span></div>
             <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12 }}>Full customization & all pages</div>
 
             <R on>WhatsApp button on <b>all pages</b></R>
