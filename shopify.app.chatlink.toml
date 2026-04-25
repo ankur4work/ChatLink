@@ -2,7 +2,7 @@
 
 client_id = "f8878e48c46de19d79c0fa5d9f9cb888"
 name = "chatlink"
-application_url = "https://chatlink.solnix.store"
+application_url = "https://chatlink-x7k9.91.239.208.85.sslip.io"
 embedded = true
 
 [build]
@@ -16,9 +16,9 @@ api_version = "2026-07"
 scopes = "read_products,read_themes"
 
 [auth]
-redirect_urls = [ "https://chatlink.solnix.store/api/auth/callback" ]
+redirect_urls = [ "https://chatlink-x7k9.91.239.208.85.sslip.io/api/auth/callback" ]
 
 [webhooks.privacy_compliance]
-customer_deletion_url = "https://chatlink.solnix.store/api/webhooks"
-customer_data_request_url = "https://chatlink.solnix.store/api/webhooks"
-shop_deletion_url = "https://chatlink.solnix.store/api/webhooks"
+customer_deletion_url = "https://chatlink-x7k9.91.239.208.85.sslip.io/api/webhooks"
+customer_data_request_url = "https://chatlink-x7k9.91.239.208.85.sslip.io/api/webhooks"
+shop_deletion_url = "https://chatlink-x7k9.91.239.208.85.sslip.io/api/webhooks"
