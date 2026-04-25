@@ -6,7 +6,6 @@ import {
   Card,
   Button,
   Banner,
-  Stack,
   SkeletonBodyText,
   Badge,
 } from "@shopify/polaris";
@@ -58,26 +57,36 @@ export default function Pricing() {
     }
   };
 
-  const R = ({ on, children }) => (
-    <div style={{ fontSize: 13, color: on ? "#374151" : "#D1D5DB", padding: "4px 0", display: "flex", alignItems: "center" }}>
-      <span style={{ color: on ? "#22C55E" : "#D1D5DB", marginRight: 8, fontSize: 14 }}>{on ? "\u2713" : "\u2715"}</span>
-      {children}
-    </div>
-  );
-
   if (plan === null) {
     return (
       <Page title="Pricing">
         <Layout>
-          {[1, 2].map((i) => (
-            <Layout.Section oneHalf key={i}>
-              <Card sectioned><SkeletonBodyText lines={5} /></Card>
-            </Layout.Section>
-          ))}
+          <Layout.Section>
+            <Card sectioned><SkeletonBodyText lines={8} /></Card>
+          </Layout.Section>
         </Layout>
       </Page>
     );
   }
+
+  const features = [
+    { name: "WhatsApp button on homepage", free: true, premium: true },
+    { name: "Product & collection pages", free: false, premium: true },
+    { name: "All pages coverage", free: false, premium: true },
+    { name: "Page visibility control", free: false, premium: true },
+    { name: "Custom button color", free: false, premium: true },
+    { name: "Custom shape & position", free: false, premium: true },
+    { name: "Multiple icon styles", free: false, premium: true },
+    { name: "Custom default message", free: false, premium: true },
+  ];
+
+  const Mark = ({ on }) => on ? (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#22C55E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  ) : (
+    <span style={{ color: "#D1D5DB", fontSize: 18, fontWeight: 400 }}>—</span>
+  );
 
   return (
     <Page title="Pricing">
@@ -90,56 +99,147 @@ export default function Pricing() {
 
       <Layout>
 
-        <Layout.Section oneHalf>
-          <Card sectioned>
-            <Stack alignment="center" distribution="equalSpacing">
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#002B5C" }}>Free</span>
-              {isCurrent("free") && <Badge status="info">Current</Badge>}
-            </Stack>
-            <div style={{ fontSize: 32, fontWeight: 800, color: "#002B5C", margin: "6px 0 4px" }}>$0</div>
-            <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12 }}>Homepage only</div>
+        {/* PRICE HEADERS BAR */}
+        <Layout.Section>
+          <div style={{
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 10,
+            overflow: "hidden",
+          }}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1.6fr 1fr 1fr",
+              borderBottom: "1px solid #E5E7EB",
+            }}>
+              <div style={{ padding: "20px 22px" }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: "#002B5C", marginBottom: 4 }}>
+                  Choose your plan
+                </div>
+                <div style={{ fontSize: 13, color: "#6B7280" }}>
+                  Compare features side-by-side
+                </div>
+              </div>
 
-            <R on>WhatsApp button on homepage</R>
-            <R on>1 icon style</R>
-            <R on>Default color & shape</R>
-            <R>Show on product & collection pages</R>
-            <R>Page visibility control</R>
-            <R>Custom color, shape & position</R>
+              {/* FREE COLUMN HEADER */}
+              <div style={{
+                padding: "20px 18px",
+                borderLeft: "1px solid #E5E7EB",
+                background: isCurrent("free") ? "#F9FAFB" : "#fff",
+                textAlign: "center",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#002B5C" }}>Free</span>
+                  {isCurrent("free") && <Badge status="info">Current</Badge>}
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: "#002B5C", lineHeight: 1 }}>$0</div>
+                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>forever</div>
+              </div>
 
-            <div style={{ marginTop: 14 }}>
-              <Button fullWidth disabled={isCurrent("free")} loading={actionLoading === "free"} onClick={() => changePlan("free")}>
-                {isCurrent("free") ? "Current plan" : "Downgrade"}
-              </Button>
+              {/* PREMIUM COLUMN HEADER */}
+              <div style={{
+                padding: "20px 18px",
+                borderLeft: "1px solid #E5E7EB",
+                background: isCurrent("premium") ? "#EFF6FF" : "#FAFCFF",
+                textAlign: "center",
+                position: "relative",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#0084FF" }}>Premium</span>
+                  {isCurrent("premium") ? (
+                    <Badge status="success">Current</Badge>
+                  ) : (
+                    <span style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color: "#fff",
+                      background: "#0084FF",
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      letterSpacing: 0.5,
+                    }}>BEST VALUE</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: "#0084FF", lineHeight: 1 }}>
+                  ${PRICE}
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#6B7280" }}>/mo</span>
+                </div>
+                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>cancel anytime</div>
+              </div>
             </div>
-          </Card>
-        </Layout.Section>
 
-        <Layout.Section oneHalf>
-          <Card sectioned>
-            <Stack alignment="center" distribution="equalSpacing">
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#002B5C" }}>Premium</span>
-              {isCurrent("premium") ? (
-                <Badge status="success">Current</Badge>
-              ) : (
-                <span style={{ fontSize: 10, fontWeight: 700, color: "#0084FF", background: "#EEF2FF", padding: "2px 8px", borderRadius: 999 }}>RECOMMENDED</span>
-              )}
-            </Stack>
-            <div style={{ fontSize: 32, fontWeight: 800, color: "#002B5C", margin: "6px 0 4px" }}>${PRICE}<span style={{ fontSize: 13, fontWeight: 400, color: "#6B7280" }}>/mo</span></div>
-            <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 12 }}>Full customization & all pages</div>
+            {/* FEATURE ROWS */}
+            {features.map((f, i) => (
+              <div key={i} style={{
+                display: "grid",
+                gridTemplateColumns: "1.6fr 1fr 1fr",
+                borderBottom: i < features.length - 1 ? "1px solid #F3F4F6" : "none",
+              }}>
+                <div style={{
+                  padding: "12px 22px",
+                  fontSize: 13,
+                  color: "#374151",
+                  display: "flex",
+                  alignItems: "center",
+                }}>
+                  {f.name}
+                </div>
+                <div style={{
+                  padding: "12px 18px",
+                  borderLeft: "1px solid #F3F4F6",
+                  background: isCurrent("free") ? "#FAFAFA" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <Mark on={f.free} />
+                </div>
+                <div style={{
+                  padding: "12px 18px",
+                  borderLeft: "1px solid #F3F4F6",
+                  background: isCurrent("premium") ? "#F5FAFF" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <Mark on={f.premium} />
+                </div>
+              </div>
+            ))}
 
-            <R on>WhatsApp button on <b>all pages</b></R>
-            <R on>3 icon styles</R>
-            <R on>Custom color, shape & position</R>
-            <R on>Show on product & collection pages</R>
-            <R on>Page visibility control</R>
-            <R on>Custom default message</R>
-
-            <div style={{ marginTop: 14 }}>
-              <Button fullWidth primary disabled={isCurrent("premium")} loading={actionLoading === "premium"} onClick={() => changePlan("premium")}>
-                {isCurrent("premium") ? "Current plan" : `Upgrade \u2013 $${PRICE}/mo`}
-              </Button>
+            {/* ACTION ROW */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1.6fr 1fr 1fr",
+              borderTop: "1px solid #E5E7EB",
+              background: "#FAFAFA",
+            }}>
+              <div style={{ padding: "16px 22px", fontSize: 12, color: "#6B7280", display: "flex", alignItems: "center" }}>
+                30-day money-back guarantee
+              </div>
+              <div style={{ padding: "14px 14px", borderLeft: "1px solid #E5E7EB" }}>
+                <Button
+                  fullWidth
+                  disabled={isCurrent("free")}
+                  loading={actionLoading === "free"}
+                  onClick={() => changePlan("free")}
+                >
+                  {isCurrent("free") ? "Current" : "Downgrade"}
+                </Button>
+              </div>
+              <div style={{ padding: "14px 14px", borderLeft: "1px solid #E5E7EB" }}>
+                <Button
+                  fullWidth
+                  primary
+                  disabled={isCurrent("premium")}
+                  loading={actionLoading === "premium"}
+                  onClick={() => changePlan("premium")}
+                >
+                  {isCurrent("premium") ? "Current" : `Upgrade $${PRICE}/mo`}
+                </Button>
+              </div>
             </div>
-          </Card>
+          </div>
         </Layout.Section>
 
       </Layout>

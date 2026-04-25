@@ -50,139 +50,210 @@ export default function HomePage() {
   };
 
   const steps = [
-    "Open Theme Editor from above.",
-    "Add block \u2192 Apps \u2192 ChatLink.",
-    "Enter your WhatsApp number.",
-    "Customize style & position.",
-    "Save \u2014 you\u2019re live!",
+    { title: "Open editor", desc: "Launch theme editor" },
+    { title: "Add block", desc: "Apps → ChatLink" },
+    { title: "Set number", desc: "Enter WhatsApp number" },
+    { title: "Customize", desc: "Style & position" },
+    { title: "Publish", desc: "Save — you're live" },
+  ];
+
+  const stats = [
+    {
+      label: "Plan",
+      value: isPlanLoading ? "—" : (currentPlan === "premium" ? "Premium" : "Free"),
+      hint: currentPlan === "premium" ? "All pages" : "Homepage only",
+      accent: "#0084FF",
+    },
+    {
+      label: "Status",
+      value: "Active",
+      hint: "Ready to install",
+      accent: "#22C55E",
+    },
+    {
+      label: "Pages",
+      value: currentPlan === "premium" ? "All" : "Home",
+      hint: currentPlan === "premium" ? "Full coverage" : "Upgrade for more",
+      accent: "#F59E0B",
+    },
   ];
 
   return (
     <Page>
       <Layout>
 
-        {/* HERO */}
+        {/* WELCOME BAR */}
         <Layout.Section>
           <div style={{
-            background: "linear-gradient(135deg, #0084FF, #00D4FF)",
-            borderRadius: 8,
-            padding: "20px 22px",
-            color: "#fff",
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 10,
+            padding: "18px 22px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <svg viewBox="0 0 32 32" width="22" height="22">
-                <path fill="#fff" d="M19.11 17.21c-.27-.14-1.58-.78-1.82-.87-.24-.09-.41-.14-.59.14-.17.27-.68.87-.83 1.05-.15.17-.3.2-.56.07-.27-.14-1.13-.42-2.15-1.33-.79-.7-1.33-1.56-1.48-1.82-.15-.27-.02-.41.11-.55.12-.12.27-.3.41-.45.14-.15.18-.27.27-.45.09-.17.05-.33-.02-.47-.07-.14-.59-1.42-.81-1.95-.21-.5-.42-.43-.59-.44h-.5c-.17 0-.45.06-.68.33-.24.27-.89.87-.89 2.11 0 1.24.91 2.44 1.03 2.61.12.17 1.78 2.71 4.31 3.8.6.26 1.07.41 1.44.53.61.19 1.17.16 1.61.1.49-.07 1.58-.65 1.8-1.28.22-.63.22-1.17.15-1.28-.07-.11-.24-.17-.5-.3z"/>
-                <path fill="#fff" d="M16 3C9.38 3 4 8.38 4 15c0 2.1.55 4.08 1.5 5.79L4 29l8.4-1.47A11.94 11.94 0 0016 27c6.62 0 12-5.38 12-12S22.62 3 16 3z"/>
-              </svg>
-              <span style={{ fontSize: 18, fontWeight: 700 }}>ChatLink</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{
+                width: 44, height: 44,
+                borderRadius: 10,
+                background: "#EFF6FF",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#0084FF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#002B5C", marginBottom: 2 }}>
+                  ChatLink Dashboard
+                </div>
+                <div style={{ fontSize: 13, color: "#6B7280" }}>
+                  Connect your store to WhatsApp in minutes
+                </div>
+              </div>
             </div>
-            <p style={{ fontSize: 13, lineHeight: 1.5, margin: 0, opacity: 0.9 }}>
-              Add a floating WhatsApp button to your store. Let customers contact you instantly.
-            </p>
-            <div style={{ marginTop: 14 }}>
-              <Button onClick={openThemeEditor} size="slim">Open Theme Editor</Button>
-            </div>
+            <Button primary onClick={openThemeEditor}>Open Theme Editor</Button>
           </div>
         </Layout.Section>
 
-        {/* PLAN + SETUP — same structure for equal height */}
-        <Layout.Section oneHalf>
-          <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 12 }}>Your Plan</div>
-            {isPlanLoading ? (
-              <SkeletonBodyText lines={3} />
-            ) : (
-              <Stack vertical spacing="tight">
-                <div style={{
-                  display: "inline-block",
-                  padding: "4px 12px",
-                  borderRadius: 4,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#fff",
-                  background: currentPlan === "premium"
-                    ? "linear-gradient(90deg, #0084FF, #00D4FF)"
-                    : "#9CA3AF",
-                }}>
-                  {currentPlan === "premium" ? "Premium" : "Free"}
+        {/* STATS ROW */}
+        <Layout.Section>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            {stats.map((s, i) => (
+              <div key={i} style={{
+                background: "#fff",
+                border: "1px solid #E5E7EB",
+                borderLeft: `3px solid ${s.accent}`,
+                borderRadius: 8,
+                padding: "14px 16px",
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
+                  {s.label}
                 </div>
-                <div style={{ fontSize: 13, color: "#6B7280" }}>
-                  {currentPlan === "premium"
-                    ? "All pages \u2022 Full customization"
-                    : "Homepage only \u2022 Basic features"}
-                </div>
-                {currentPlan === "free" && (
-                  <Button size="slim" onClick={() => navigate("/pricing")}>Upgrade</Button>
+                {isPlanLoading && i === 0 ? (
+                  <SkeletonBodyText lines={1} />
+                ) : (
+                  <>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: "#002B5C", marginBottom: 2 }}>
+                      {s.value}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#6B7280" }}>
+                      {s.hint}
+                    </div>
+                  </>
                 )}
-              </Stack>
-            )}
-          </Card>
+              </div>
+            ))}
+          </div>
         </Layout.Section>
 
-        <Layout.Section oneHalf>
-          <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 12 }}>Quick Setup</div>
-            <Stack vertical spacing="tight">
-              {steps.map((step, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{
-                    width: 18, height: 18, borderRadius: "50%",
-                    background: "#0084FF", color: "#fff",
-                    fontSize: 10, fontWeight: 700,
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>{i + 1}</span>
-                  <span style={{ fontSize: 13, color: "#374151" }}>{step}</span>
-                </div>
-              ))}
-            </Stack>
-          </Card>
-        </Layout.Section>
-
-        {/* HOW IT WORKS */}
+        {/* SETUP STEPPER */}
         <Layout.Section>
           <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 14 }}>How It Works</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-              {[
-                { title: "Install", desc: "Add the ChatLink block to your theme via the Shopify theme editor." },
-                { title: "Configure", desc: "Set your WhatsApp number, choose icon style, color, and position." },
-                { title: "Go Live", desc: "Customers see the floating button and can message you with one tap." },
-              ].map((item, i) => (
-                <div key={i}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C" }}>Setup Steps</div>
+              {currentPlan === "free" && (
+                <Button size="slim" onClick={() => navigate("/pricing")}>Upgrade to Premium</Button>
+              )}
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", position: "relative" }}>
+              {/* Connecting line */}
+              <div style={{
+                position: "absolute",
+                top: 14, left: "10%", right: "10%",
+                height: 2,
+                background: "#E5E7EB",
+                zIndex: 0,
+              }} />
+              {steps.map((step, i) => (
+                <div key={i} style={{ flex: 1, textAlign: "center", position: "relative", zIndex: 1 }}>
                   <div style={{
-                    width: 26, height: 26, borderRadius: "50%",
-                    background: "#EEF2FF", color: "#0084FF",
+                    width: 30, height: 30, borderRadius: "50%",
+                    background: "#0084FF", color: "#fff",
                     fontSize: 13, fontWeight: 700,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    marginBottom: 6,
-                  }}>{i + 1}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#002B5C", marginBottom: 3 }}>{item.title}</div>
-                  <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>{item.desc}</div>
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    marginBottom: 8,
+                    border: "3px solid #fff",
+                  }}>
+                    {i + 1}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#002B5C", marginBottom: 2 }}>
+                    {step.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6B7280", lineHeight: 1.4 }}>
+                    {step.desc}
+                  </div>
                 </div>
               ))}
             </div>
           </Card>
         </Layout.Section>
 
-        {/* TIPS */}
-        <Layout.Section>
+        {/* INFO + TIPS SPLIT */}
+        <Layout.Section oneHalf>
           <Card sectioned>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 10 }}>Tips</div>
-            <Stack vertical spacing="tight">
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 14 }}>How It Works</div>
+            <div>
               {[
-                "Use your country code with the phone number (e.g. 91 for India, 1 for US).",
-                "Set a default message to help customers start the conversation.",
-                "Circle shape works best \u2014 clean and recognizable.",
-                "Place on the right side to avoid overlapping other widgets.",
-                "Upgrade to Premium to show on product and collection pages.",
+                { title: "Install", desc: "Add the ChatLink block to any theme via the Shopify theme editor." },
+                { title: "Configure", desc: "Set your WhatsApp number, choose icon style, color, and position." },
+                { title: "Go Live", desc: "Customers see the floating button and can message you with one tap." },
+              ].map((item, i) => (
+                <div key={i} style={{
+                  display: "flex",
+                  gap: 12,
+                  padding: "10px 0",
+                  borderBottom: i < 2 ? "1px solid #F3F4F6" : "none",
+                }}>
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 6,
+                    background: "#EFF6FF", color: "#0084FF",
+                    fontSize: 12, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                  }}>{i + 1}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#002B5C", marginBottom: 2 }}>{item.title}</div>
+                    <div style={{ fontSize: 12, color: "#6B7280", lineHeight: 1.5 }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Layout.Section>
+
+        <Layout.Section oneHalf>
+          <Card sectioned>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C", marginBottom: 14 }}>Best Practices</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+              {[
+                "Include country code (e.g. 91, 1)",
+                "Set a default greeting message",
+                "Circle shape works best",
+                "Position on the right side",
+                "Upgrade for product/collection pages",
               ].map((tip, i) => (
-                <div key={i} style={{ display: "flex", gap: 8, fontSize: 13, color: "#374151" }}>
-                  <span style={{ color: "#0084FF", flexShrink: 0 }}>&bull;</span>
+                <div key={i} style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 13,
+                  color: "#374151",
+                  padding: "8px 10px",
+                  background: "#F9FAFB",
+                  borderRadius: 6,
+                }}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#22C55E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                   {tip}
                 </div>
               ))}
-            </Stack>
+            </div>
           </Card>
         </Layout.Section>
 
