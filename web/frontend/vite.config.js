@@ -48,9 +48,16 @@ if (host === "localhost") {
   };
 }
 
+const htmlEnvPlugin = {
+  name: "html-env-replace",
+  transformIndexHtml(html) {
+    return html.replace(/%SHOPIFY_API_KEY%/g, process.env.SHOPIFY_API_KEY || "");
+  },
+};
+
 export default defineConfig({
   root: dirname(fileURLToPath(import.meta.url)),
-  plugins: [react()],
+  plugins: [react(), htmlEnvPlugin],
   define: {
     "process.env.SHOPIFY_API_KEY": JSON.stringify(process.env.SHOPIFY_API_KEY),
   },

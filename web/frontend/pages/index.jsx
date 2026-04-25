@@ -10,14 +10,12 @@ import {
   Stack,
 } from "@shopify/polaris";
 import { useAppQuery, useAuthenticatedFetch } from "../hooks";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { useNavigate } from "react-router-dom";
 
 export default function HomePage() {
   const [activateError, setActivateError] = useState(null);
   const navigate = useNavigate();
 
-  const app = useAppBridge();
   const fetch = useAuthenticatedFetch();
 
   const {

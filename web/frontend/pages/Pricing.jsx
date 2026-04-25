@@ -10,13 +10,9 @@ import {
   Badge,
 } from "@shopify/polaris";
 import { useAuthenticatedFetch } from "../hooks";
-import { useAppBridge } from "@shopify/app-bridge-react";
-import { Redirect } from "@shopify/app-bridge/actions";
 
 export default function Pricing() {
-  const app = useAppBridge();
   const fetchAuth = useAuthenticatedFetch();
-  const redirect = Redirect.create(app);
 
   const [plan, setPlan] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
@@ -50,7 +46,11 @@ export default function Pricing() {
       const res = await fetchAuth(`/api/createSubscription?plan=premium`);
       const data = await res.json();
       if (data.confirmationUrl) {
-        redirect.dispatch(Redirect.Action.REMOTE, data.confirmationUrl);
+        if (window.top) {
+          window.top.location.href = data.confirmationUrl;
+        } else {
+          window.location.href = data.confirmationUrl;
+        }
       }
     } finally {
       setActionLoading(null);
