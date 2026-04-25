@@ -1,32 +1,33 @@
 {% assign plan = shop.metafields.custom["chatlink-whatsapp-button"] | default: 'free' %}
 {% assign template_name = template.name %}
 
+{% assign raw_phone = block.settings.phone_number | strip %}
+{% assign whatsapp_phone = raw_phone | remove: ' ' | remove: '+' | remove: '-' %}
+
 {% assign show_button = false %}
 
-{% if plan == 'free' %}
-  {% if template_name == 'index' %}
-    {% assign show_button = true %}
+{% if whatsapp_phone != blank %}
+  {% if plan == 'free' %}
+    {% if template_name == 'index' and block.settings.show_home %}
+      {% assign show_button = true %}
+    {% endif %}
+  {% else %}
+    {% if block.settings.show_all %}
+      {% assign show_button = true %}
+    {% endif %}
+    {% if block.settings.show_home and template_name == 'index' %}
+      {% assign show_button = true %}
+    {% endif %}
+    {% if block.settings.show_product and template_name == 'product' %}
+      {% assign show_button = true %}
+    {% endif %}
+    {% if block.settings.show_collection and template_name == 'collection' %}
+      {% assign show_button = true %}
+    {% endif %}
   {% endif %}
-{% else %}
-  {% if block.settings.show_all %}
-    {% assign show_button = true %}
-  {% endif %}
-  {% if block.settings.show_home and template_name == 'index' %}
-    {% assign show_button = true %}
-  {% endif %}
-  {% if block.settings.show_product and template_name == 'product' %}
-    {% assign show_button = true %}
-  {% endif %}
-  {% if block.settings.show_collection and template_name == 'collection' %}
-    {% assign show_button = true %}
-  {% endif %}
-
 {% endif %}
 
 {% if show_button %}
-
-{% assign raw_phone = block.settings.phone_number | default: '911234567890' | strip %}
-{% assign whatsapp_phone = raw_phone | remove: ' ' | remove: '+' | remove: '-' %}
 
 <div
   id="mxwab-{{ block.id }}"
@@ -99,7 +100,8 @@
   if (!root) return;
 
   var button = root.querySelector('a');
-  var phone = (root.dataset.phone || '911234567890').replace(/\D/g, '');
+  var phone = (root.dataset.phone || '').replace(/\D/g, '');
+  if (!phone) return;
   var message = root.dataset.message || '';
   var href = 'https://wa.me/' + phone;
 
@@ -120,7 +122,8 @@
     {
       "type": "text",
       "id": "phone_number",
-      "label": "WhatsApp number"
+      "label": "WhatsApp number",
+      "info": "Required. Include country code, e.g. 911234567890. The button stays hidden until this is filled in."
     },
     {
       "type": "textarea",
@@ -198,10 +201,10 @@
       "type": "header",
       "content": "Premium Page Visibility"
     },
-    { "type": "checkbox", "id": "show_all", "label": "Show on all pages", "default": true },
-    { "type": "checkbox", "id": "show_home", "label": "Homepage", "default": true },
-    { "type": "checkbox", "id": "show_product", "label": "Product pages", "default": true },
-    { "type": "checkbox", "id": "show_collection", "label": "Collection pages", "default": true },
+    { "type": "checkbox", "id": "show_all", "label": "Show on all pages", "default": false },
+    { "type": "checkbox", "id": "show_home", "label": "Homepage", "default": false },
+    { "type": "checkbox", "id": "show_product", "label": "Product pages", "default": false },
+    { "type": "checkbox", "id": "show_collection", "label": "Collection pages", "default": false },
 
   ]
 }
