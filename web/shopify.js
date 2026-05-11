@@ -41,6 +41,10 @@ function getSessionStorage() {
   };
 }
 
+export const PLAN_NAME = process.env.PLAN_NAME || "Premium";
+export const PLAN_AMOUNT = parseFloat(process.env.PLAN_AMOUNT || "100.00");
+export const PLAN_TRIAL_DAYS = parseInt(process.env.PLAN_TRIAL_DAYS || "0", 10);
+
 const shopify = shopifyApp({
   api: {
     apiVersion: ApiVersion.April26,
@@ -50,10 +54,11 @@ const shopify = shopifyApp({
     hostName: process.env.HOST.replace(/https?:\/\//, ""),
     scopes: ["read_themes", "read_products"],
     billing: {
-      Premium: {
-        amount: 100.0,
+      [PLAN_NAME]: {
+        amount: PLAN_AMOUNT,
         currencyCode: "USD",
         interval: "EVERY_30_DAYS",
+        trialDays: PLAN_TRIAL_DAYS,
       },
     },
   },

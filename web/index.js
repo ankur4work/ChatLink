@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import express from "express";
 import serveStatic from "serve-static";
 
-import shopify from "./shopify.js";
+import shopify, { PLAN_NAME, PLAN_AMOUNT, PLAN_TRIAL_DAYS } from "./shopify.js";
 import cancelSubscription from "./cancel-subscription.js";
 import GDPRWebhookHandlers from "./gdpr.js";
 import dotenv from "dotenv";
@@ -24,7 +24,7 @@ const STATIC_PATH =
     ? `${process.cwd()}/frontend/dist`
     : `${process.cwd()}/frontend/`;
 
-const PREMIUM_PLAN = "Premium";
+const PREMIUM_PLAN = PLAN_NAME;
 
 const APP_NAMESPACE = "custom";
 const SHOP_METAFIELD_KEY = "chatlink-whatsapp-button";
@@ -133,7 +133,7 @@ const BillingService = {
       lineItems: [{
         plan: {
           appRecurringPricingDetails: {
-            price: { amount: 100.0, currencyCode: "USD" },
+            price: { amount: PLAN_AMOUNT, currencyCode: "USD" },
             interval: "EVERY_30_DAYS",
           },
         },
