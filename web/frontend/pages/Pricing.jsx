@@ -17,8 +17,9 @@ export default function Pricing() {
   const [plan, setPlan] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [banner, setBanner] = useState(null);
+  const [planInfo, setPlanInfo] = useState({ amount: "...", trialDays: 0 });
 
-  const PRICE = "100";
+  const PRICE = planInfo.amount;
   const isCurrent = (p) => plan === p;
 
   const loadPlan = async () => {
@@ -31,7 +32,15 @@ export default function Pricing() {
     }
   };
 
-  useEffect(() => { loadPlan(); }, []);
+  const loadPlanInfo = async () => {
+    try {
+      const res = await fetchAuth("/api/plan-info");
+      const data = await res.json();
+      setPlanInfo({ amount: parseFloat(data.amount).toFixed(0), trialDays: data.trialDays || 0 });
+    } catch {}
+  };
+
+  useEffect(() => { loadPlan(); loadPlanInfo(); }, []);
 
   const changePlan = async (target) => {
     if (target === plan) return;
@@ -164,7 +173,9 @@ export default function Pricing() {
                   ${PRICE}
                   <span style={{ fontSize: 13, fontWeight: 500, color: "#6B7280" }}>/mo</span>
                 </div>
-                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>cancel anytime</div>
+                <div style={{ fontSize: 11, color: "#6B7280", marginTop: 4 }}>
+                  {planInfo.trialDays > 0 ? `${planInfo.trialDays}-day free trial` : "cancel anytime"}
+                </div>
               </div>
             </div>
 

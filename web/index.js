@@ -337,6 +337,15 @@ app.get("/api/getshop", (req, res) => {
   res.json({ shop: session?.shop || null });
 });
 
+app.get("/api/plan-info", (_req, res) => {
+  res.json({
+    name: PLAN_NAME,
+    amount: PLAN_AMOUNT,
+    trialDays: PLAN_TRIAL_DAYS,
+    currency: "USD",
+  });
+});
+
 // Debug: check what the token actually has
 app.get("/api/debug-session", async (req, res) => {
   const session = getSession(res);
