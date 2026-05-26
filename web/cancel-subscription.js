@@ -41,7 +41,7 @@ export default async function cancelSubscription(
 
   async function appSubscriptionCancel(session, subscriptionId) {
     const client = new shopify.api.clients.Graphql({ session });
-  
+
     const mutationResponse = await client.query({
       data: {
         query: CANCEL_SUBSCRIPTION,
@@ -52,17 +52,23 @@ export default async function cancelSubscription(
     });
 
     if (mutationResponse.body.errors && mutationResponse.body.errors.length) {
-      throw new ShopifyGraphqlClient(
-        "Error while subscription cancel",
-        mutationResponse.body.errors
+      throw new Error(
+        mutationResponse.body.errors.map((error) => error.message).join(", ")
       );
-    }else{
-      console.log("Subscription canceled successfully: ", session.shop);
-      //console.log("Status: ", mutationResponse.body.data.appSubscriptionCancel.appSubscription.status);
     }
 
-    return  mutationResponse.body.data.appSubscriptionCancel.appSubscription.status;
+    const result = mutationResponse.body.data?.appSubscriptionCancel;
+    if (result?.userErrors?.length) {
+      throw new Error(result.userErrors.map((error) => error.message).join(", "));
+    }
 
+    const status = result?.appSubscription?.status;
+    if (!status) {
+      throw new Error("Subscription cancel did not return a status");
+    }
+
+    console.log("Subscription canceled successfully: ", session.shop, status);
+    return status;
   }
 
   const CANCEL_SUBSCRIPTION = `
