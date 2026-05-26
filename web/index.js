@@ -115,9 +115,7 @@ const BillingService = {
     }`);
     const subs = data?.currentAppInstallation?.activeSubscriptions || [];
     return subs.some(
-      (subscription) =>
-        subscription.name === PREMIUM_PLAN &&
-        ["ACTIVE", "ACCEPTED"].includes(subscription.status)
+      (subscription) => subscription.name === PREMIUM_PLAN && subscription.status === "ACTIVE"
     );
   },
 
