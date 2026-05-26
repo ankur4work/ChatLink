@@ -9,13 +9,14 @@ import {
 
 export default function App() {
   const pages = import.meta.glob("./pages/**/!(*.test.[jt]sx)*.([jt]sx)", { eager: true });
+  const search = window.location.search || "";
 
   return (
     <PolarisProvider>
       <BrowserRouter>
         <QueryProvider>
           <NavMenu>
-            <a href="/pricing">Pricing</a>
+            <a href={`/pricing${search}`}>Pricing</a>
           </NavMenu>
           <Routes pages={pages} />
         </QueryProvider>

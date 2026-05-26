@@ -10,12 +10,13 @@ import {
   TopBar,
   Stack,
 } from "@shopify/polaris";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Installation() {
   const [active, setActive] = useState(false);
   const handleChange = useCallback(() => setActive(!active), [active]);
   const navigate = useNavigate();
+  const { search } = useLocation();
 
   const steps = [
     {
@@ -152,7 +153,7 @@ export default function Installation() {
                     Where the WhatsApp button can appear on your store
                   </div>
                 </div>
-                <Button onClick={() => navigate("/pricing")}>View Plans</Button>
+                <Button onClick={() => navigate(`/pricing${search}`)}>View Plans</Button>
               </div>
 
               <div style={{ border: "1px solid #E5E7EB", borderRadius: 8, overflow: "hidden" }}>

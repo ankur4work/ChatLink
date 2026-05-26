@@ -10,11 +10,12 @@ import {
   Stack,
 } from "@shopify/polaris";
 import { useAppQuery, useAuthenticatedFetch } from "../hooks";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function HomePage() {
   const [activateError, setActivateError] = useState(null);
   const navigate = useNavigate();
+  const { search } = useLocation();
 
   const fetch = useAuthenticatedFetch();
 
@@ -158,7 +159,7 @@ export default function HomePage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#002B5C" }}>Setup Steps</div>
               {currentPlan === "free" && (
-                <Button size="slim" onClick={() => navigate("/pricing")}>Upgrade to Premium</Button>
+                <Button size="slim" onClick={() => navigate(`/pricing${search}`)}>Upgrade to Premium</Button>
               )}
             </div>
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", position: "relative" }}>
