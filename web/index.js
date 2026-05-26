@@ -404,8 +404,7 @@ app.get("/api/hasActiveSubscription", async (req, res) => {
       tier,
     });
   } catch (err) {
-    // Return free plan as safe default instead of crashing
-    res.send({ hasActiveSubscription: false, tier: "free" });
+    handleError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
   }
 });
 

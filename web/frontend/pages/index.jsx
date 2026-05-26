@@ -31,6 +31,11 @@ export default function HomePage() {
     try {
       const response = await fetch("/api/hasActiveSubscription");
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to load subscription status");
+      }
+
       setSubscriptionData(data);
       return data;
     } finally {
@@ -46,15 +51,33 @@ export default function HomePage() {
     setActivateError(null);
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
-      const data = await loadSubscription();
-      if (data?.tier === "premium") {
-        return;
+      try {
+        const data = await loadSubscription();
+        if (data?.tier === "premium") {
+          return;
+        }
+      } catch (error) {
+        if (attempt === 4) {
+          setActivateError(error.message || "Failed to verify premium activation.");
+          return;
+        }
       }
+
       await wait(1500);
     }
 
     setSubscriptionData({ tier: "free" });
     setActivateError("Payment approved, but premium did not activate yet. Please refresh in a few seconds.");
+  };
+
+  const loadInitialSubscription = async () => {
+    try {
+      await loadSubscription();
+      setActivateError(null);
+    } catch (error) {
+      setActivateError(error.message || "Failed to load subscription status.");
+      setSubscriptionData(null);
+    }
   };
 
   useEffect(() => {
@@ -64,7 +87,7 @@ export default function HomePage() {
       return;
     }
 
-    loadSubscription();
+    loadInitialSubscription();
   }, [search]);
 
   useEffect(() => {
