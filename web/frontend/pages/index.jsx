@@ -66,6 +66,17 @@ export default function HomePage() {
           return;
         }
       } catch (error) {
+        if (error?.message === "Payment approved, but premium activation is still syncing.") {
+          setSubscriptionData({ tier: "premium" });
+          if (attempt < 4) {
+            await wait(1500);
+            continue;
+          }
+
+          setActivateError("Payment approved, but premium is still syncing. Please refresh in a few seconds.");
+          return;
+        }
+
         if (attempt === 4) {
           setActivateError(error.message || "Failed to verify premium activation.");
           return;
@@ -74,9 +85,6 @@ export default function HomePage() {
 
       await wait(1500);
     }
-
-    setSubscriptionData({ tier: "free" });
-    setActivateError("Payment approved, but premium did not activate yet. Please refresh in a few seconds.");
   };
 
   const loadInitialSubscription = async () => {

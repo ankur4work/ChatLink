@@ -38,6 +38,7 @@ const HTTP_STATUS = {
   OK: 200,
   BAD_REQUEST: 400,
   UNAUTHORIZED: 401,
+  CONFLICT: 409,
   INTERNAL_SERVER_ERROR: 500,
 };
 
@@ -83,6 +84,13 @@ const handleError = (res, code, message) => {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+class BillingSyncPendingError extends Error {
+  constructor(message = "Payment approved, but premium activation is still syncing.") {
+    super(message);
+    this.name = "BillingSyncPendingError";
+  }
+}
+
 const resolveTierWithRetry = async (session, attempts = 5, delayMs = 1500) => {
   let lastError;
 
@@ -108,7 +116,7 @@ const resolveTierWithRetry = async (session, attempts = 5, delayMs = 1500) => {
     throw lastError;
   }
 
-  return "free";
+  throw new BillingSyncPendingError();
 };
 
 const syncTierMetafields = async (session, tier) => {
@@ -453,6 +461,13 @@ app.get("/api/hasActiveSubscription", async (req, res) => {
     await syncTierMetafields(session, tier);
     sendTierResponse(res, tier);
   } catch (err) {
+    if (err instanceof BillingSyncPendingError) {
+      return res.status(HTTP_STATUS.CONFLICT).send({
+        error: err.message,
+        code: "BILLING_SYNC_PENDING",
+      });
+    }
+
     handleError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
   }
 });
