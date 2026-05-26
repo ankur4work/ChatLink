@@ -41,6 +41,10 @@ export default function HomePage() {
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const syncSubscriptionAfterBilling = async () => {
+    setSubscriptionData({ tier: "premium" });
+    setIsPlanLoading(false);
+    setActivateError(null);
+
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const data = await loadSubscription();
       if (data?.tier === "premium") {
@@ -48,6 +52,9 @@ export default function HomePage() {
       }
       await wait(1500);
     }
+
+    setSubscriptionData({ tier: "free" });
+    setActivateError("Payment approved, but premium did not activate yet. Please refresh in a few seconds.");
   };
 
   useEffect(() => {
@@ -62,13 +69,10 @@ export default function HomePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(search);
-    if (params.get("charge_id") && currentPlan === "free") {
-      setActivateError("Payment approved, but premium is still syncing. Please wait a few seconds and refresh if needed.");
-      return;
+    if (!params.get("charge_id")) {
+      setActivateError(null);
     }
-
-    setActivateError(null);
-  }, [currentPlan, search]);
+  }, [search]);
 
 
   const openThemeEditor = async () => {
