@@ -108,12 +108,25 @@ const BillingService = {
     const { data } = await shopifyGraphQL(session, `{
       currentAppInstallation {
         activeSubscriptions {
+          id
           name
           status
+          test
         }
       }
     }`);
     const subs = data?.currentAppInstallation?.activeSubscriptions || [];
+    console.log(
+      "Billing subscriptions:",
+      JSON.stringify(
+        subs.map((subscription) => ({
+          id: subscription.id,
+          name: subscription.name,
+          status: subscription.status,
+          test: subscription.test,
+        }))
+      )
+    );
     return subs.some(
       (subscription) => subscription.name === PREMIUM_PLAN && subscription.status === "ACTIVE"
     );
