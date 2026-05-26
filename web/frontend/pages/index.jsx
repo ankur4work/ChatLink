@@ -29,7 +29,16 @@ export default function HomePage() {
   const loadSubscription = async () => {
     setIsPlanLoading(true);
     try {
-      const response = await fetch("/api/hasActiveSubscription");
+      const params = new URLSearchParams(search);
+      if (params.get("charge_id")) {
+        params.set("billingReturn", "1");
+      }
+
+      const requestUrl = params.toString()
+        ? `/api/hasActiveSubscription?${params.toString()}`
+        : "/api/hasActiveSubscription";
+
+      const response = await fetch(requestUrl);
       const data = await response.json();
 
       if (!response.ok) {

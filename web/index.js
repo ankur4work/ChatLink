@@ -81,6 +81,67 @@ const handleError = (res, code, message) => {
   res.status(code).send({ error: message });
 };
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const resolveTierWithRetry = async (session, attempts = 5, delayMs = 1500) => {
+  let lastError;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const tier = await SubscriptionService.getPlanTier(session);
+      if (tier === "premium") {
+        return tier;
+      }
+
+      if (attempt < attempts - 1) {
+        await wait(delayMs);
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts - 1) {
+        await wait(delayMs);
+      }
+    }
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  return "free";
+};
+
+const syncTierMetafields = async (session, tier) => {
+  try {
+    if (tier === "premium") {
+      await MetafieldService.ensureAppMetafield(session);
+    }
+    await MetafieldService.updateShopMetafield(session, tier);
+  } catch (error) {
+    console.warn("Metafield update skipped:", error.message);
+  }
+};
+
+const sendTierResponse = (res, tier) => {
+  res.send({
+    hasActiveSubscription: tier === "premium",
+    tier,
+  });
+};
+
+const isTruthyParam = (value) => value === "1" || value === "true";
+
+const hasBillingReturn = (req) =>
+  isTruthyParam(req.query?.billingReturn) || Boolean(req.query?.charge_id);
+
+const getTierForStatusRequest = async (req, session) => {
+  if (hasBillingReturn(req)) {
+    return resolveTierWithRetry(session, 5, 1500);
+  }
+
+  return SubscriptionService.getPlanTier(session);
+};
+
 /* ------------------------------------------------ */
 /*                BILLING SERVICE                    */
 /* ------------------------------------------------ */
@@ -387,22 +448,10 @@ app.get("/api/cancelSubscription", async (req, res) => {
 app.get("/api/hasActiveSubscription", async (req, res) => {
   try {
     const session = getSession(res);
-    const tier = await SubscriptionService.getPlanTier(session);
+    const tier = await getTierForStatusRequest(req, session);
 
-    // Try to update metafields but don't fail if it errors
-    try {
-      if (tier === "premium") {
-        await MetafieldService.ensureAppMetafield(session);
-      }
-      await MetafieldService.updateShopMetafield(session, tier);
-    } catch (e) {
-      console.warn("Metafield update skipped:", e.message);
-    }
-
-    res.send({
-      hasActiveSubscription: tier === "premium",
-      tier,
-    });
+    await syncTierMetafields(session, tier);
+    sendTierResponse(res, tier);
   } catch (err) {
     handleError(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, err.message);
   }
