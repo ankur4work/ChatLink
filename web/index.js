@@ -111,22 +111,10 @@ const BillingService = {
           id
           name
           status
-          test
         }
       }
     }`);
     const subs = data?.currentAppInstallation?.activeSubscriptions || [];
-    console.log(
-      "Billing subscriptions:",
-      JSON.stringify(
-        subs.map((subscription) => ({
-          id: subscription.id,
-          name: subscription.name,
-          status: subscription.status,
-          test: subscription.test,
-        }))
-      )
-    );
     return subs.some(
       (subscription) => subscription.name === PREMIUM_PLAN && subscription.status === "ACTIVE"
     );
@@ -190,37 +178,39 @@ const BillingService = {
       }
     }`);
 
-    const activeSubscription = (data?.currentAppInstallation?.activeSubscriptions || []).find(
+    const activeSubscriptions = (data?.currentAppInstallation?.activeSubscriptions || []).filter(
       (subscription) => subscription.name === PREMIUM_PLAN && subscription.status === "ACTIVE"
     );
 
-    if (!activeSubscription?.id) {
+    if (!activeSubscriptions.length) {
       return "No subscription found";
     }
 
-    const cancellation = await shopifyGraphQL(session, `
-      mutation appSubscriptionCancel($id: ID!) {
-        appSubscriptionCancel(id: $id) {
-          appSubscription {
-            id
-            status
-          }
-          userErrors {
-            field
-            message
+    for (const subscription of activeSubscriptions) {
+      const cancellation = await shopifyGraphQL(session, `
+        mutation appSubscriptionCancel($id: ID!) {
+          appSubscriptionCancel(id: $id) {
+            appSubscription {
+              id
+              status
+            }
+            userErrors {
+              field
+              message
+            }
           }
         }
-      }
-    `, {
-      id: activeSubscription.id,
-    });
+      `, {
+        id: subscription.id,
+      });
 
-    const result = cancellation?.data?.appSubscriptionCancel;
-    if (result?.userErrors?.length) {
-      throw new Error(result.userErrors.map((error) => error.message).join(", "));
+      const result = cancellation?.data?.appSubscriptionCancel;
+      if (result?.userErrors?.length) {
+        throw new Error(result.userErrors.map((error) => error.message).join(", "));
+      }
     }
 
-    return result?.appSubscription?.status || "CANCELLED";
+    return "CANCELLED";
   },
 };
 
