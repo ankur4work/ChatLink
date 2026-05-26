@@ -44,23 +44,48 @@ export default function Pricing() {
 
   const changePlan = async (target) => {
     if (target === plan) return;
+
     try {
       setActionLoading(target);
+
       if (target === "free") {
-        await fetchAuth("/api/cancelSubscription");
+        const res = await fetchAuth("/api/cancelSubscription");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data?.error || "Failed to switch to free plan");
+        }
+
         await loadPlan();
         setBanner({ status: "success", msg: "Free plan activated" });
         return;
       }
+
       const res = await fetchAuth(`/api/createSubscription?plan=premium`);
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to start premium subscription");
+      }
+
+      if (data.isActiveSubscription) {
+        await loadPlan();
+        setBanner({ status: "success", msg: "Premium plan is already active" });
+        return;
+      }
+
       if (data.confirmationUrl) {
         if (window.top) {
           window.top.location.href = data.confirmationUrl;
         } else {
           window.location.href = data.confirmationUrl;
         }
+        return;
       }
+
+      throw new Error("No billing confirmation URL returned");
+    } catch (err) {
+      setBanner({ status: "critical", msg: err.message || "Something went wrong" });
     } finally {
       setActionLoading(null);
     }

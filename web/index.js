@@ -181,8 +181,8 @@ const SubscriptionService = {
         return "premium";
       }
 
-      const storedTier = await MetafieldService.getShopTier(session);
-      return storedTier === "free" ? "free" : "free";
+      await MetafieldService.getShopTier(session);
+      return "free";
     } catch (err) {
       console.error("Subscription check failed:", err);
       return "free";
