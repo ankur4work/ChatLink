@@ -114,7 +114,11 @@ const BillingService = {
       }
     }`);
     const subs = data?.currentAppInstallation?.activeSubscriptions || [];
-    return subs.some(s => s.status === "ACTIVE" && s.name === PREMIUM_PLAN);
+    return subs.some(
+      (subscription) =>
+        subscription.name === PREMIUM_PLAN &&
+        ["ACTIVE", "ACCEPTED"].includes(subscription.status)
+    );
   },
 
   async shouldUseTestBilling(session) {
