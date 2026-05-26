@@ -165,7 +165,47 @@ const BillingService = {
   },
 
   async cancel(session) {
-    return await cancelSubscription(session);
+    const { data } = await shopifyGraphQL(session, `{
+      currentAppInstallation {
+        activeSubscriptions {
+          id
+          name
+          status
+        }
+      }
+    }`);
+
+    const activeSubscription = (data?.currentAppInstallation?.activeSubscriptions || []).find(
+      (subscription) => subscription.name === PREMIUM_PLAN && subscription.status === "ACTIVE"
+    );
+
+    if (!activeSubscription?.id) {
+      return "No subscription found";
+    }
+
+    const cancellation = await shopifyGraphQL(session, `
+      mutation appSubscriptionCancel($id: ID!) {
+        appSubscriptionCancel(id: $id) {
+          appSubscription {
+            id
+            status
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `, {
+      id: activeSubscription.id,
+    });
+
+    const result = cancellation?.data?.appSubscriptionCancel;
+    if (result?.userErrors?.length) {
+      throw new Error(result.userErrors.map((error) => error.message).join(", "));
+    }
+
+    return result?.appSubscription?.status || "CANCELLED";
   },
 };
 
