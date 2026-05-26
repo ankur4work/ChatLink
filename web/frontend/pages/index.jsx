@@ -1,5 +1,5 @@
 // @ts-check
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Card,
   Page,
@@ -9,28 +9,67 @@ import {
   Banner,
   Stack,
 } from "@shopify/polaris";
-import { useAppQuery, useAuthenticatedFetch } from "../hooks";
+import { useAuthenticatedFetch } from "../hooks";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function HomePage() {
   const [activateError, setActivateError] = useState(null);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [isPlanLoading, setIsPlanLoading] = useState(true);
   const navigate = useNavigate();
   const { search } = useLocation();
 
   const fetch = useAuthenticatedFetch();
-
-  const {
-    data: subscriptionData,
-    isLoading,
-    isFetching,
-  } = useAppQuery({ url: "/api/hasActiveSubscription" });
 
   const currentPlan = useMemo(() => {
     if (!subscriptionData) return "free";
     return subscriptionData.tier === "premium" ? "premium" : "free";
   }, [subscriptionData]);
 
-  const isPlanLoading = isLoading || isFetching;
+  const loadSubscription = async () => {
+    setIsPlanLoading(true);
+    try {
+      const response = await fetch("/api/hasActiveSubscription");
+      const data = await response.json();
+      setSubscriptionData(data);
+      return data;
+    } finally {
+      setIsPlanLoading(false);
+    }
+  };
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const syncSubscriptionAfterBilling = async () => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const data = await loadSubscription();
+      if (data?.tier === "premium") {
+        return;
+      }
+      await wait(1500);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("charge_id")) {
+      syncSubscriptionAfterBilling();
+      return;
+    }
+
+    loadSubscription();
+  }, [search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("charge_id") && currentPlan === "free") {
+      setActivateError("Payment approved, but premium is still syncing. Please wait a few seconds and refresh if needed.");
+      return;
+    }
+
+    setActivateError(null);
+  }, [currentPlan, search]);
+
 
   const openThemeEditor = async () => {
     setActivateError(null);
