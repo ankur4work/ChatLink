@@ -176,12 +176,16 @@ const BillingService = {
 const SubscriptionService = {
   async getPlanTier(session) {
     try {
+      const storedTier = await MetafieldService.getShopTier(session);
+      if (storedTier === "free") {
+        return "free";
+      }
+
       const active = await BillingService.check(session);
       if (active) {
         return "premium";
       }
 
-      await MetafieldService.getShopTier(session);
       return "free";
     } catch (err) {
       console.error("Subscription check failed:", err);
