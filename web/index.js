@@ -30,7 +30,7 @@ const APP_NAMESPACE = "custom";
 const SHOP_METAFIELD_KEY = "chatlink-whatsapp-button";
 const APP_INSTALL_METAFIELD_KEY = "chatlink-whatsapp-button-premium";
 
-const IS_TEST = process.env.SHOPIFY_BILLING_TEST === "true";
+const BILLING_TEST_OVERRIDE = process.env.SHOPIFY_BILLING_TEST;
 
 const APP_NAME = "chatlink-whatsapp-button";
 
@@ -117,7 +117,24 @@ const BillingService = {
     return subs.some(s => s.status === "ACTIVE" && s.name === PREMIUM_PLAN);
   },
 
+  async shouldUseTestBilling(session) {
+    if (BILLING_TEST_OVERRIDE === "true") return true;
+    if (BILLING_TEST_OVERRIDE === "false") return false;
+
+    const { data } = await shopifyGraphQL(session, `{
+      shop {
+        plan {
+          partnerDevelopment
+          shopifyPlus
+        }
+      }
+    }`);
+
+    return Boolean(data?.shop?.plan?.partnerDevelopment);
+  },
+
   async request(session) {
+    const test = await this.shouldUseTestBilling(session);
     const { data } = await shopifyGraphQL(session, `
       mutation appSubscriptionCreate($name: String!, $returnUrl: URL!, $test: Boolean, $lineItems: [AppSubscriptionLineItemInput!]!, $trialDays: Int) {
         appSubscriptionCreate(name: $name, returnUrl: $returnUrl, test: $test, lineItems: $lineItems, trialDays: $trialDays) {
@@ -129,7 +146,7 @@ const BillingService = {
     `, {
       name: PREMIUM_PLAN,
       returnUrl: `https://${session.shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`,
-      test: IS_TEST,
+      test,
       trialDays: PLAN_TRIAL_DAYS > 0 ? PLAN_TRIAL_DAYS : null,
       lineItems: [{
         plan: {
