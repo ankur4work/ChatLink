@@ -30,7 +30,7 @@ const APP_NAMESPACE = "custom";
 const SHOP_METAFIELD_KEY = "chatlink-whatsapp-button";
 const APP_INSTALL_METAFIELD_KEY = "chatlink-whatsapp-button-premium";
 
-const IS_TEST = false;
+const IS_TEST = process.env.SHOPIFY_BILLING_TEST === "true";
 
 const APP_NAME = "chatlink-whatsapp-button";
 
