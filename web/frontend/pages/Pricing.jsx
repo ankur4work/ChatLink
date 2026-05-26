@@ -26,10 +26,28 @@ export default function Pricing() {
     try {
       const res = await fetchAuth("/api/hasActiveSubscription");
       const data = await res.json();
-      setPlan(data?.tier === "premium" ? "premium" : "free");
+      const nextPlan = data?.tier === "premium" ? "premium" : "free";
+      setPlan(nextPlan);
+      return nextPlan;
     } catch {
       setPlan("free");
+      return "free";
     }
+  };
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const syncPlanAfterBilling = async () => {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const nextPlan = await loadPlan();
+      if (nextPlan === "premium") {
+        setBanner({ status: "success", msg: "Premium plan activated" });
+        return;
+      }
+      await wait(1500);
+    }
+
+    setBanner({ status: "critical", msg: "Payment approved, but premium has not synced yet. Please refresh in a few seconds." });
   };
 
   const loadPlanInfo = async () => {
@@ -40,7 +58,17 @@ export default function Pricing() {
     } catch {}
   };
 
-  useEffect(() => { loadPlan(); loadPlanInfo(); }, []);
+  useEffect(() => {
+    loadPlanInfo();
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("charge_id")) {
+      syncPlanAfterBilling();
+      return;
+    }
+
+    loadPlan();
+  }, []);
 
   const changePlan = async (target) => {
     if (target === plan) return;
