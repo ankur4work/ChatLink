@@ -159,6 +159,11 @@ const BillingService = {
 const SubscriptionService = {
   async getPlanTier(session) {
     try {
+      const storedTier = await MetafieldService.getShopTier(session);
+      if (storedTier === "free") {
+        return "free";
+      }
+
       const active = await BillingService.check(session);
       return active ? "premium" : "free";
     } catch (err) {
@@ -178,6 +183,15 @@ const MetafieldService = {
     const shopId = data?.shop?.id;
     if (!shopId) throw new Error("Shop ID not found");
     return shopId;
+  },
+
+  async getShopTier(session) {
+    const { data } = await shopifyGraphQL(session, SHOP_TIER_QUERY, {
+      namespace: APP_NAMESPACE,
+      key: SHOP_METAFIELD_KEY,
+    });
+    const value = data?.shop?.metafield?.value;
+    return value === "premium" ? "premium" : value === "free" ? "free" : null;
   },
 
   async updateShopMetafield(session, tier) {
@@ -416,6 +430,16 @@ query appSubscription($namespace: String!, $key: String!) {
       key
       value
       id
+    }
+  }
+}
+`;
+
+const SHOP_TIER_QUERY = `
+query shopTier($namespace: String!, $key: String!) {
+  shop {
+    metafield(namespace: $namespace, key: $key) {
+      value
     }
   }
 }
